@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($pageTitle ?? 'Simulasi Topologi') ?> - NetSim Academy</title>
+    <title><?= htmlspecialchars($pageTitle ?? 'Simulasi Topologi') ?> - SMP Negeri 1 Karangmoncol</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
@@ -426,7 +426,7 @@ function appLayout() {
         confirmLogout() {
             Swal.fire({
                 title: 'Keluar dari Akun?',
-                text: 'Kamu akan keluar dari NetSim Academy.',
+                text: 'Kamu akan keluar dari aplikasi SMP Negeri 1 Karangmoncol.',
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonText: 'Ya, Keluar',

@@ -1,4 +1,4 @@
-# 🌐 NetSim Academy — Media Pembelajaran & Simulasi Topologi Jaringan Komputer
+# 🌐 SMP Negeri 1 Karangmoncol — Media Pembelajaran & Simulasi Topologi Jaringan Komputer
 
 > **Aplikasi Pembelajaran Jaringan Komputer & Simulasi Topologi Interaktif Berbasis Gamifikasi**  
 > Diterapkan untuk pembelajaran Informatika siswa di **SMP Negeri 1 Karangmoncol**, Kabupaten Purbalingga.
@@ -41,7 +41,7 @@ flowchart LR
         Siswa(["📱 Siswa"])
     end
 
-    subgraph Sistem ["Sistem NetSim Academy (Web & Mobile)"]
+    subgraph Sistem ["Sistem SMP Negeri 1 Karangmoncol (Web & Mobile)"]
         UC1["Login Multi-Peran"]
         UC2["Kelola Modul & Materi Pembelajaran"]
         UC3["Kelola Bank Kuis & Butir Soal"]
@@ -352,7 +352,7 @@ git push -u origin main
   - **Animasi Ping Data Packet:** Simulasi visual paket data bercahaya meluncur sepanjang kabel.
   - Validasi otomatis topologi (*Star, Bus, Ring, Tree, Mesh*) via REST API dengan reward XP.
 * **Gamifikasi Terpadu:**
-  - Pangkat level (*Pemula Jaringan, Teknisi Muda, Arsitek Jaringan, Juara NetSim*).
+  - Pangkat level (*Pemula Jaringan, Teknisi Muda, Arsitek Jaringan, Bintang Sekolah*).
   - XP Bar, Daily Streak 🔥, dan koleksi Lencana (*Badges*) interaktif.
 * **Kuis Berwaktu:** Live countdown timer, navigasi nomor soal interaktif, dan evaluasi hasil langsung.
 * **Papan Peringkat (Leaderboard):** Podium Top 3 (*Emas, Perak, Perunggu*) dan peringkat kelas real-time.

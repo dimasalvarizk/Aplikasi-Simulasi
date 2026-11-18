@@ -88,158 +88,177 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: Image.asset(
-                'assets/images/logo.jpg',
-                width: 26,
-                height: 26,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Icon(Icons.school_outlined, size: 20),
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Text(
-              'SMPN 1 Karangmoncol',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, letterSpacing: -0.2),
-            ),
-          ],
-        ),
-        actions: [
-          // XP Pill Clean
-          GestureDetector(
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilScreen()));
-            },
-            child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Text(
-                '${globalUser.totalXp} XP',
-                style: const TextStyle(
-                  color: Color(0xFF0F172A),
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ),
-          // Notification Bell with Badge
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined, size: 22, color: Color(0xFF334155)),
-                tooltip: 'Pemberitahuan',
-                onPressed: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const NotifikasiScreen()),
-                  );
-                  _loadAllData();
-                },
-              ),
-              if (_unreadNotifCount > 0)
-                Positioned(
-                  right: 8,
-                  top: 10,
-                  child: Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1.5),
-                    ),
-                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                    child: Text(
-                      _unreadNotifCount > 9 ? '9+' : '$_unreadNotifCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
-                        height: 1,
+    return WillPopScope(
+      onWillPop: () async {
+        if (_selectedTabIndex != 0) {
+          setState(() {
+            _selectedTabIndex = 0;
+          });
+          return false;
+        }
+        return true;
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        appBar: _selectedTabIndex == 0
+            ? AppBar(
+                title: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.asset(
+                        'assets/images/logo.jpg',
+                        width: 26,
+                        height: 26,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.school_outlined, size: 20),
                       ),
-                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'SMPN 1 Karangmoncol',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, letterSpacing: -0.2),
+                    ),
+                  ],
+                ),
+                actions: [
+                  // XP Pill Clean
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilScreen()));
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Text(
+                        '${globalUser.totalXp} XP',
+                        style: const TextStyle(
+                          color: Color(0xFF0F172A),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  // Notification Bell with Badge
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.notifications_outlined, size: 22, color: Color(0xFF334155)),
+                        tooltip: 'Pemberitahuan',
+                        onPressed: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const NotifikasiScreen()),
+                          );
+                          _loadAllData();
+                        },
+                      ),
+                      if (_unreadNotifCount > 0)
+                        Positioned(
+                          right: 8,
+                          top: 10,
+                          child: Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF4444),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 1.5),
+                            ),
+                            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                            child: Text(
+                              _unreadNotifCount > 9 ? '9+' : '$_unreadNotifCount',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                height: 1,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilScreen()));
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 8, left: 4),
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFFCBD5E1), width: 1),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: ApiService.getFullAvatarUrl(globalUser.avatar).isNotEmpty
+                          ? Image.network(
+                              ApiService.getFullAvatarUrl(globalUser.avatar),
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(Icons.person_outline, size: 18, color: Color(0xFF334155)),
+                            )
+                          : const Icon(Icons.person_outline, size: 18, color: Color(0xFF334155)),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                ],
+              )
+            : null,
+        body: IndexedStack(
+          index: _selectedTabIndex,
+          children: [
+            _buildBerandaTab(),
+            _buildModulTab(),
+            SimulasiListScreen(
+              onBack: () => setState(() => _selectedTabIndex = 0),
+            ),
+            StudiKasusScreen(
+              onBack: () => setState(() => _selectedTabIndex = 0),
+            ),
+            _buildKuisTab(),
+            LeaderboardScreen(
+              onBack: () => setState(() => _selectedTabIndex = 0),
+            ),
+          ],
+        ),
+        bottomNavigationBar: Container(
+          decoration: const BoxDecoration(
+            border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+          ),
+          child: BottomNavigationBar(
+            currentIndex: _selectedTabIndex,
+            onTap: (index) {
+              setState(() {
+                _selectedTabIndex = index;
+              });
+            },
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            selectedItemColor: const Color(0xFF0F172A),
+            unselectedItemColor: const Color(0xFF94A3B8),
+            selectedFontSize: 10,
+            unselectedFontSize: 10,
+            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
+            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
+            elevation: 0,
+            items: const [
+              BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Beranda'),
+              BottomNavigationBarItem(icon: Icon(Icons.menu_book_outlined), activeIcon: Icon(Icons.menu_book), label: 'Modul'),
+              BottomNavigationBarItem(icon: Icon(Icons.hub_outlined), activeIcon: Icon(Icons.hub), label: 'Simulasi'),
+              BottomNavigationBarItem(icon: Icon(Icons.security_outlined), activeIcon: Icon(Icons.security), label: 'Tantangan'),
+              BottomNavigationBarItem(icon: Icon(Icons.assignment_outlined), activeIcon: Icon(Icons.assignment), label: 'Kuis'),
+              BottomNavigationBarItem(icon: Icon(Icons.leaderboard_outlined), activeIcon: Icon(Icons.leaderboard), label: 'Peringkat'),
             ],
           ),
-          GestureDetector(
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilScreen()));
-            },
-            child: Container(
-              margin: const EdgeInsets.only(right: 8, left: 4),
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFCBD5E1), width: 1),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: ApiService.getFullAvatarUrl(globalUser.avatar).isNotEmpty
-                  ? Image.network(
-                      ApiService.getFullAvatarUrl(globalUser.avatar),
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(Icons.person_outline, size: 18, color: Color(0xFF334155)),
-                    )
-                  : const Icon(Icons.person_outline, size: 18, color: Color(0xFF334155)),
-            ),
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
-      body: IndexedStack(
-        index: _selectedTabIndex,
-        children: [
-          _buildBerandaTab(),
-          _buildModulTab(),
-          const SimulasiListScreen(),
-          const StudiKasusScreen(),
-          _buildKuisTab(),
-          const LeaderboardScreen(),
-        ],
-      ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedTabIndex,
-          onTap: (index) {
-            setState(() {
-              _selectedTabIndex = index;
-            });
-          },
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: const Color(0xFF0F172A),
-          unselectedItemColor: const Color(0xFF94A3B8),
-          selectedFontSize: 10,
-          unselectedFontSize: 10,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
-          elevation: 0,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Beranda'),
-            BottomNavigationBarItem(icon: Icon(Icons.menu_book_outlined), activeIcon: Icon(Icons.menu_book), label: 'Modul'),
-            BottomNavigationBarItem(icon: Icon(Icons.hub_outlined), activeIcon: Icon(Icons.hub), label: 'Simulasi'),
-            BottomNavigationBarItem(icon: Icon(Icons.security_outlined), activeIcon: Icon(Icons.security), label: 'Tantangan'),
-            BottomNavigationBarItem(icon: Icon(Icons.assignment_outlined), activeIcon: Icon(Icons.assignment), label: 'Kuis'),
-            BottomNavigationBarItem(icon: Icon(Icons.leaderboard_outlined), activeIcon: Icon(Icons.leaderboard), label: 'Peringkat'),
-          ],
         ),
       ),
     );
@@ -551,12 +570,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: Colors.indigo.shade400.withOpacity(0.25),
+                      color: const Color(0xFF38BDF8).withOpacity(0.18),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.indigo.shade300.withOpacity(0.5)),
+                      border: Border.all(color: const Color(0xFF38BDF8).withOpacity(0.4)),
                     ),
                     child: const Center(
-                      child: Text('🕵️‍♂️', style: TextStyle(fontSize: 26)),
+                      child: Icon(
+                        Icons.security_rounded,
+                        color: Color(0xFF38BDF8),
+                        size: 28,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -583,13 +606,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                             ),
                             const Spacer(),
-                            const Text(
-                              'Buka ➔',
-                              style: TextStyle(
-                                color: Color(0xFF818CF8),
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Text(
+                                  'Buka',
+                                  style: TextStyle(
+                                    color: Color(0xFF818CF8),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(width: 3),
+                                Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 13,
+                                  color: Color(0xFF818CF8),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -1145,8 +1179,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
+          tooltip: 'Kembali ke Beranda',
+          onPressed: () => setState(() => _selectedTabIndex = 0),
+        ),
         title: const Text('Modul Pembelajaran', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-        automaticallyImplyLeading: false,
       ),
       body: RefreshIndicator(
         onRefresh: _loadAllData,
@@ -1244,8 +1282,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
+          tooltip: 'Kembali ke Beranda',
+          onPressed: () => setState(() => _selectedTabIndex = 0),
+        ),
         title: const Text('Kuis Evaluasi', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-        automaticallyImplyLeading: false,
       ),
       body: RefreshIndicator(
         onRefresh: _loadAllData,

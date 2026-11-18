@@ -12,8 +12,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _usernameController = TextEditingController(text: 'siswa1');
-  final _passwordController = TextEditingController(text: 'password123');
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
   String? _errorMessage;
@@ -185,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: fUsernameController,
                   style: const TextStyle(fontSize: 13),
                   decoration: InputDecoration(
-                    hintText: 'Contoh: siswa1',
+                    hintText: 'Masukkan username siswa',
                     prefixIcon: const Icon(Icons.person_outline_rounded, size: 18),
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
@@ -226,7 +226,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: fKeteranganController,
                   style: const TextStyle(fontSize: 13),
                   decoration: InputDecoration(
-                    hintText: 'Contoh: Lupa password setelah ganti ponsel',
+                    hintText: 'Tulis alasan jika ada (opsional)',
                     prefixIcon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
@@ -671,7 +671,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       controller: _usernameController,
                                       style: const TextStyle(fontSize: 13.5, color: Color(0xFF0F172A)),
                                       decoration: InputDecoration(
-                                        hintText: 'Contoh: siswa1',
+                                        hintText: 'Masukkan username atau NISN',
                                         prefixIcon: const Icon(Icons.person_outline_rounded, size: 19, color: Color(0xFF64748B)),
                                         filled: true,
                                         fillColor: const Color(0xFFF8FAFC),

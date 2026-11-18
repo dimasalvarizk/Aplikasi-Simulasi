@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/login_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,7 +12,7 @@ class SimulasiTopologiApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'NetSim',
+      title: 'SMP Negeri 1 Karangmoncol',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -138,7 +138,7 @@ class SimulasiTopologiApp extends StatelessWidget {
 
         return child ?? const SizedBox.shrink();
       },
-      home: const LoginScreen(),
+      home: const SplashScreen(),
     );
   }
 }

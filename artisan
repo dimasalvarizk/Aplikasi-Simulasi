@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 /**
- * NetSim Academy CLI Tool (Artisan CLI Compatibility)
+ * SMP Negeri 1 Karangmoncol CLI Tool (Artisan CLI Compatibility)
  */
 
 $command = $argv[1] ?? 'help';
@@ -19,7 +19,7 @@ if ($command === 'serve') {
         }
     }
 
-    echo "\n  \033[34;1mNetSim Academy Application Server\033[0m\n";
+    echo "\n  \033[34;1mSMP Negeri 1 Karangmoncol Application Server\033[0m\n";
     echo "  Server berjalan di: \033[32;1mhttp://{$host}:{$port}\033[0m\n";
     echo "  Buka browser dan login menggunakan akun bawaan:\n";
     echo "    - Guru: \033[33;1mguru1\033[0m / password123\n";
@@ -42,7 +42,7 @@ if ($command === 'migrate' || $command === 'db:seed' || $command === 'migrate:fr
 }
 
 // Bantuan perintah
-echo "\n\033[34;1mNetSim Academy CLI (Artisan Compatibility)\033[0m\n\n";
+echo "\n\033[34;1mSMP Negeri 1 Karangmoncol CLI (Artisan Compatibility)\033[0m\n\n";
 echo "Perintah yang tersedia:\n";
 echo "  \033[32mphp artisan serve\033[0m           Jalankan local development web server (port 8000)\n";
 echo "  \033[32mphp artisan serve --port=8080\033[0m Jalankan server pada port custom\n";

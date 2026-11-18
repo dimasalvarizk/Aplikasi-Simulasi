@@ -34,8 +34,14 @@ class KuisHasilScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
+            tooltip: 'Kembali ke Beranda',
+            onPressed: () {
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            },
+          ),
           title: const Text('Hasil Kuis', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-          automaticallyImplyLeading: false,
         ),
         body: SafeArea(
           child: Padding(

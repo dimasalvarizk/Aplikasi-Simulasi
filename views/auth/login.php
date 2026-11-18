@@ -98,36 +98,6 @@ $flash_success = getFlash('success');
                     </span>
                 </button>
             </form>
-
-            <!-- Divider -->
-            <div class="relative my-6">
-                <div class="absolute inset-0 flex items-center">
-                    <div class="w-full border-t border-slate-200"></div>
-                </div>
-                <div class="relative flex justify-center">
-                    <span class="bg-white px-3 text-[11px] font-semibold text-slate-400">AKUN DEMO CEPAT</span>
-                </div>
-            </div>
-
-            <!-- Demo credentials hint (Clean & Tanpa Ikon) -->
-            <div class="space-y-2">
-                <div class="grid grid-cols-2 gap-2">
-                    <button type="button" @click="fillDemo('angzal')"
-                            class="py-2.5 px-3 border border-slate-200 bg-slate-50/70 hover:bg-slate-100 rounded-xl text-xs text-left transition-colors">
-                        <span class="block font-bold text-slate-800">Angzal M., S.Pd</span>
-                        <span class="text-[10px] text-slate-500 block">Guru / Pengelola</span>
-                    </button>
-                    <button type="button" @click="fillDemo('hana')"
-                            class="py-2.5 px-3 border border-slate-200 bg-slate-50/70 hover:bg-slate-100 rounded-xl text-xs text-left transition-colors">
-                        <span class="block font-bold text-slate-800">Hana S., S.Pd</span>
-                        <span class="text-[10px] text-slate-500 block">Guru / Pengelola</span>
-                    </button>
-                </div>
-                <button type="button" @click="fillDemo('siswa')"
-                        class="w-full py-2 px-3 border border-slate-200 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors text-center">
-                    Akun Siswa: Ahmad Fauzi (siswa1)
-                </button>
-            </div>
         </div>
 
         <!-- Footer Text -->
@@ -163,18 +133,6 @@ function loginForm() {
         loading: false,
         handleSubmit(e) {
             this.loading = true;
-        },
-        fillDemo(role) {
-            if (role === 'angzal' || role === 'guru') {
-                document.getElementById('username').value = 'angzal';
-                document.getElementById('password').value = 'password123';
-            } else if (role === 'hana') {
-                document.getElementById('username').value = 'hana';
-                document.getElementById('password').value = 'password123';
-            } else {
-                document.getElementById('username').value = 'siswa1';
-                document.getElementById('password').value = 'password123';
-            }
         }
     }
 }

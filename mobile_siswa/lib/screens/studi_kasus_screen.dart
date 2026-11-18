@@ -4,8 +4,9 @@ import '../services/api_service.dart';
 
 class StudiKasusScreen extends StatefulWidget {
   final Map<String, dynamic>? user;
+  final VoidCallback? onBack;
 
-  const StudiKasusScreen({Key? key, this.user}) : super(key: key);
+  const StudiKasusScreen({Key? key, this.user, this.onBack}) : super(key: key);
 
   @override
   State<StudiKasusScreen> createState() => _StudiKasusScreenState();
@@ -235,9 +236,20 @@ class _StudiKasusScreenState extends State<StudiKasusScreen> {
                 ),
                 child: Row(
                   children: [
-                    Text(
-                      badge['icon']?.toString() ?? '🕵️‍♂️',
-                      style: const TextStyle(fontSize: 28),
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.indigo.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.shield_rounded,
+                          color: Color(0xFF4F46E5),
+                          size: 22,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -342,15 +354,32 @@ class _StudiKasusScreenState extends State<StudiKasusScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text(
-          'Detektif Siber 🕵️‍♂️',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
+          tooltip: 'Kembali',
+          onPressed: () {
+            if (widget.onBack != null) {
+              widget.onBack!();
+            } else if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            }
+          },
+        ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.security_rounded, size: 20, color: Color(0xFF2563EB)),
+            SizedBox(width: 8),
+            Text(
+              'Detektif Siber',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+            ),
+          ],
         ),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF0F172A),
         elevation: 0,
         centerTitle: false,
-        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),

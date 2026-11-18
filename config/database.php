@@ -282,23 +282,14 @@ function seedInitialData(PDO $pdo): void {
     // Password default: password123
     $hashPass = password_hash('password123', PASSWORD_BCRYPT);
 
-    // 1. Users (Guru / Pengelola & Siswa)
+    // 1. Users Guru / Pengelola Resmi
     $stmt = $pdo->prepare("INSERT INTO users (nama, username, email, password, role, nip, kelas, nisn, is_active, avatar) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)");
     $stmt->execute(['Angzal Maolana, S.Pd', 'angzal', 'angzal@smpn1karangmoncol.sch.id', $hashPass, 'guru', '198703122014021001', null, null, 'public/img/avatars/avatar_8.png']);
     $stmt->execute(['Hana Sifakhatin, S.Pd', 'hana', 'hana@smpn1karangmoncol.sch.id', $hashPass, 'guru', '199008252015032002', null, null, 'public/img/avatars/avatar_2.png']);
-    $stmt->execute(['Ahmad Fauzi', 'siswa1', 'ahmad@simulasi.test', $hashPass, 'siswa', null, 'VII A', '0051234567', 'public/img/avatars/avatar_1.png']);
-    $stmt->execute(['Siti Rahmawati', 'siswa2', 'siti@simulasi.test', $hashPass, 'siswa', null, 'VII A', '0051234568', 'public/img/avatars/avatar_2.png']);
-    $stmt->execute(['Bambang Wicaksono', 'siswa3', 'bambang@simulasi.test', $hashPass, 'siswa', null, 'VII B', '0051234569', 'public/img/avatars/avatar_3.png']);
 
-    // 2. Gamifikasi awal untuk siswa
-    $stmtGamif = $pdo->prepare("INSERT INTO gamifikasi (user_id, total_xp, level, streak_days, last_activity) VALUES (?, ?, ?, ?, ?)");
-    $stmtGamif->execute([2, 450, 5, 7, date('Y-m-d')]);
-    $stmtGamif->execute([3, 720, 8, 12, date('Y-m-d')]);
-    $stmtGamif->execute([4, 180, 2, 3, date('Y-m-d')]);
-
-    // 3. Badges
+    // 2. Master Badges Sistem
     $badges = [
-        ['pemula', 'Pemula Jaringan', 'Selamat datang! Kamu telah bergabung di NetSim Academy.', '🌱', 10, 'level', 1],
+        ['pemula', 'Pemula Jaringan', 'Selamat datang! Kamu telah bergabung di media pembelajaran SMP Negeri 1 Karangmoncol.', '🌱', 10, 'level', 1],
         ['xp_100', 'Kolektor XP', 'Kumpulkan 100 XP pertamamu!', '⭐', 20, 'xp_total', 100],
         ['xp_500', 'XP Hunter', 'Kumpulkan total 500 XP!', '🌟', 50, 'xp_total', 500],
         ['level_5', 'Network Apprentice', 'Capai Level 5 ke atas!', '🥉', 30, 'level', 5],
@@ -315,17 +306,7 @@ function seedInitialData(PDO $pdo): void {
         $stmtBadge->execute($b);
     }
 
-    // 4. Berikan badge awal ke siswa
-    $stmtUb = $pdo->prepare("INSERT INTO user_badges (user_id, badge_id) VALUES (?, ?)");
-    $stmtUb->execute([2, 1]); // Pemula
-    $stmtUb->execute([2, 2]); // Kolektor XP
-    $stmtUb->execute([2, 4]); // Apprentice
-    $stmtUb->execute([2, 9]); // Network Builder
-    $stmtUb->execute([3, 1]);
-    $stmtUb->execute([3, 2]);
-    $stmtUb->execute([3, 3]);
-
-    // 5. Modul Materi
+    // 3. Modul Materi
     $stmtModul = $pdo->prepare("INSERT INTO modul (guru_id, created_by, judul, deskripsi, urutan, is_published, is_active) VALUES (?, ?, ?, ?, ?, 1, 1)");
     $stmtModul->execute([1, 1, 'Pengantar Jaringan Komputer', 'Konsep dasar jaringan komputer, perangkat penghubung, dan pengenalan topologi.', 1]);
     $stmtModul->execute([1, 1, 'Topologi Star (Bintang)', 'Memahami karakteristik, kelebihan, kelemahan, dan implementasi topologi Star dengan switch/hub.', 2]);
@@ -466,24 +447,6 @@ function seedInitialData(PDO $pdo): void {
         'min_pcs' => 4,
     ]);
     $stmtSim->execute([4, 1, 1, 'Tantangan 3: Rangkai Topologi Ring Tertutup', 'Buat jalur sirkular tertutup di mana setiap node terhubung tepat ke dua tetangganya.', 'ring', $instruksiRing, $configRing, 60]);
-
-    // 10. Catat progress materi dibaca oleh siswa1
-    $stmtPm = $pdo->prepare("INSERT INTO progress_materi (user_id, materi_id, is_completed, xp_earned) VALUES (?, ?, 1, 15)");
-    $stmtPm->execute([2, 1]);
-    $stmtPm->execute([2, 2]);
-
-    // 11. Catat hasil kuis awal siswa1
-    $stmtHk = $pdo->prepare("INSERT INTO hasil_kuis (user_id, kuis_id, skor, jumlah_benar, total_benar, jumlah_soal, total_soal, xp_earned, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmtHk->execute([2, 1, 100.0, 4, 4, 4, 4, 50, 'lulus']);
-    $stmtHk->execute([3, 1, 100.0, 4, 4, 4, 4, 50, 'lulus']);
-    $stmtHk->execute([3, 2, 85.0, 3, 3, 4, 4, 60, 'lulus']);
-
-    // 12. XP Logs
-    $stmtXp = $pdo->prepare("INSERT INTO xp_log (user_id, xp_amount, sumber, referensi_id, keterangan) VALUES (?, ?, ?, ?, ?)");
-    $stmtXp->execute([2, 10, 'badge', 1, 'Perolehan badge: Pemula Jaringan']);
-    $stmtXp->execute([2, 15, 'materi', 1, 'Membaca materi: Pengantar Jaringan & Klasifikasi']);
-    $stmtXp->execute([2, 15, 'materi', 2, 'Membaca materi: Komponen Perangkat Jaringan']);
-    $stmtXp->execute([2, 50, 'kuis', 1, 'Menyelesaikan kuis: Kuis Evaluasi Dasar Jaringan Komputer (Skor 100)']);
 }
 
 function ensureKasusKeamananSchema(PDO $pdo, bool $isMySQL): void {

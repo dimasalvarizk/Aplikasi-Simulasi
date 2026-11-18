@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/api_service.dart';
@@ -86,13 +87,13 @@ class _ProfilScreenState extends State<ProfilScreen> {
     {'file': 'avatar_3.png', 'nama': 'Cendekia', 'icon': '🧑‍🎓', 'color': '0xFF10B981'},
     {'file': 'avatar_4.png', 'nama': 'Kreatif', 'icon': '👩‍🎨', 'color': '0xFF8B5CF6'},
     {'file': 'avatar_5.png', 'nama': 'Teknisi LAN', 'icon': '👨‍🔧', 'color': '0xFFF59E0B'},
-    {'file': 'avatar_6.png', 'nama': 'Bot NetSim', 'icon': '🤖', 'color': '0xFF06B6D4'},
+    {'file': 'avatar_6.png', 'nama': 'Bot SMPN 1', 'icon': '🤖', 'color': '0xFF06B6D4'},
     {'file': 'avatar_7.png', 'nama': 'Cyber Gamer', 'icon': '🎮', 'color': '0xFF6366F1'},
     {'file': 'avatar_8.png', 'nama': 'Network Master', 'icon': '🌐', 'color': '0xFF0F172A'},
     {'file': 'avatar_9.png', 'nama': 'Spesialis LAN', 'icon': '🔌', 'color': '0xFF14B8A6'},
     {'file': 'avatar_10.png', 'nama': 'Topologi Pro', 'icon': '🗺️', 'color': '0xFFF43F5E'},
     {'file': 'avatar_11.png', 'nama': 'Arsitek Jaringan', 'icon': '⚡', 'color': '0xFFEA580C'},
-    {'file': 'avatar_12.png', 'nama': 'Juara NetSim', 'icon': '🏆', 'color': '0xFFEAB308'},
+    {'file': 'avatar_12.png', 'nama': 'Bintang Sekolah', 'icon': '🏆', 'color': '0xFFEAB308'},
   ];
 
   Widget _buildAvatarWidget({double size = 52, double radius = 14}) {
@@ -143,20 +144,26 @@ class _ProfilScreenState extends State<ProfilScreen> {
 
   Future<String?> _pickImageFile() async {
     try {
-      if (Platform.isWindows) {
+      if (!kIsWeb && Platform.isWindows) {
         const psScript = r'''
-[void][System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms')
-$f = New-Object System.Windows.Forms.OpenFileDialog
-$f.Title = "Pilih Foto Profil Siswa (SMPN 1 Karangmoncol)"
-$f.Filter = "File Gambar (*.jpg;*.jpeg;*.png;*.webp;*.gif)|*.jpg;*.jpeg;*.png;*.webp;*.gif|Semua File (*.*)|*.*"
-$f.InitialDirectory = [Environment]::GetFolderPath('MyPictures')
-$f.RestoreDirectory = $true
-if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+Add-Type -AssemblyName System.Windows.Forms
+$d = New-Object System.Windows.Forms.OpenFileDialog
+$d.Title = "Pilih Foto Profil"
+$d.Filter = "File Gambar (*.jpg;*.jpeg;*.png;*.webp)|*.jpg;*.jpeg;*.png;*.webp"
+$d.RestoreDirectory = $true
+if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-    Write-Output $f.FileName
+    [Console]::Out.Write($d.FileName)
 }
 ''';
-        final res = await Process.run('powershell', ['-NoProfile', '-WindowStyle', 'Hidden', '-Command', psScript]);
+        final res = await Process.run('powershell', [
+          '-STA',
+          '-NoProfile',
+          '-ExecutionPolicy',
+          'Bypass',
+          '-Command',
+          psScript,
+        ]);
         final path = res.stdout.toString().trim();
         if (path.isNotEmpty && File(path).existsSync()) {
           return path;
@@ -185,29 +192,7 @@ if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
               duration: Duration(seconds: 2),
             ),
           );
-        }
-      }
-    } catch (_) {}
-  }
-
-  Future<void> _updateAvatarUrl(String url) async {
-    if (url.trim().isEmpty) return;
-    try {
-      final res = await ApiService.updateAvatar(globalUser.id, avatarUrl: url.trim());
-      if (res['status'] == 'success') {
-        final newUrl = res['data']?['avatar_url']?.toString() ?? res['data']?['avatar']?.toString() ?? url.trim();
-        setState(() {
-          globalUser.updateAvatar(newUrl);
-        });
-        if (mounted) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Foto profil berhasil diperbarui!'),
-              backgroundColor: Color(0xFF16A34A),
-              duration: Duration(seconds: 2),
-            ),
-          );
+          _loadProfil();
         }
       }
     } catch (_) {}
@@ -218,6 +203,7 @@ if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
     final pathController = TextEditingController();
     String? selectedFilePath;
     bool isUploading = false;
+    bool isApplyingUrl = false;
     String? statusError;
 
     showModalBottomSheet(
@@ -266,80 +252,69 @@ if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                     ],
                   ),
                   const Text(
-                    'Unggah foto asli Anda dari komputer/perangkat atau pilih avatar karakter NetSim.',
+                    'Unggah foto asli Anda dari komputer/perangkat atau pilih avatar karakter SMPN 1 Karangmoncol.',
                     style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                   ),
                   const SizedBox(height: 16),
 
                   // ==========================================
-                  // 1. BAGIAN UTAMA: UNGGAH FOTO DARI DISK / GALERI
+                  // 1. UNGGAH FOTO (SIMPEL & BERSIH)
                   // ==========================================
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [const Color(0xFFEFF6FF), const Color(0xFFF8FAFC)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFBFDBFE), width: 1.2),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: const [
-                            Icon(Icons.upload_file_rounded, size: 18, color: Color(0xFF1D4ED8)),
-                            SizedBox(width: 6),
-                            Text(
-                              'Unggah Foto dari Perangkat / Komputer',
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1E3A8A)),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Pilih file foto JPG, PNG, WEBP, atau GIF (Maksimal 5 MB).',
-                          style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Tombol Pilih File
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2563EB),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              elevation: 1,
-                            ),
-                            icon: const Icon(Icons.folder_open_rounded, size: 18),
-                            label: const Text(
-                              'Pilih Berkas Foto dari Komputer',
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                            ),
-                            onPressed: isUploading
+                        if (selectedFilePath == null) ...[
+                          InkWell(
+                            onTap: isUploading
                                 ? null
                                 : () async {
                                     final path = await _pickImageFile();
                                     if (path != null) {
                                       setModalState(() {
                                         selectedFilePath = path;
-                                        pathController.text = path;
                                         statusError = null;
+                                      });
+                                    } else if (!kIsWeb && !Platform.isWindows) {
+                                      setModalState(() {
+                                        statusError = 'Silakan pilih avatar di bawah atau masukkan URL foto.';
                                       });
                                     }
                                   },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFCBD5E1)),
+                              ),
+                              child: Column(
+                                children: const [
+                                  Icon(Icons.cloud_upload_rounded, size: 36, color: Color(0xFF2563EB)),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Pilih Foto dari Perangkat',
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                                  ),
+                                  SizedBox(height: 3),
+                                  Text(
+                                    'Pilih file foto JPG, PNG, atau WEBP',
+                                    style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
-
-                        // Preview File Terpilih & Tombol Konfirmasi Upload
-                        if (selectedFilePath != null && File(selectedFilePath!).existsSync()) ...[
-                          const SizedBox(height: 12),
+                        ] else ...[
+                          // Preview Foto Terpilih
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
@@ -353,12 +328,12 @@ if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                                   borderRadius: BorderRadius.circular(8),
                                   child: Image.file(
                                     File(selectedFilePath!),
-                                    width: 52,
-                                    height: 52,
+                                    width: 48,
+                                    height: 48,
                                     fit: BoxFit.cover,
                                     errorBuilder: (_, __, ___) => Container(
-                                      width: 52,
-                                      height: 52,
+                                      width: 48,
+                                      height: 48,
                                       color: const Color(0xFFE2E8F0),
                                       child: const Icon(Icons.broken_image, size: 24, color: Color(0xFF94A3B8)),
                                     ),
@@ -377,24 +352,20 @@ if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        'Ukuran: $fileSizeText • Siap disimpan',
-                                        style: const TextStyle(fontSize: 11, color: Color(0xFF16A34A), fontWeight: FontWeight.w500),
+                                        fileSizeText,
+                                        style: const TextStyle(fontSize: 11, color: Color(0xFF16A34A), fontWeight: FontWeight.w600),
                                       ),
                                     ],
                                   ),
                                 ),
                                 TextButton(
-                                  style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                    foregroundColor: const Color(0xFFDC2626),
-                                  ),
                                   onPressed: () {
                                     setModalState(() {
                                       selectedFilePath = null;
-                                      pathController.clear();
+                                      statusError = null;
                                     });
                                   },
-                                  child: const Text('Batal', style: TextStyle(fontSize: 11)),
+                                  child: const Text('Ganti', style: TextStyle(fontSize: 11, color: Color(0xFFDC2626))),
                                 ),
                               ],
                             ),
@@ -404,10 +375,11 @@ if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                             width: double.infinity,
                             child: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF16A34A),
+                                backgroundColor: const Color(0xFF2563EB),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(vertical: 11),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                elevation: 0,
                               ),
                               icon: isUploading
                                   ? const SizedBox(
@@ -415,9 +387,9 @@ if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                                       height: 16,
                                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                                     )
-                                  : const Icon(Icons.cloud_upload_rounded, size: 18),
+                                  : const Icon(Icons.check_circle_outline_rounded, size: 18),
                               label: Text(
-                                isUploading ? 'Mengunggah & Menyimpan...' : 'Simpan & Terapkan Foto Profil Ini',
+                                isUploading ? 'Mengunggah...' : 'Simpan Foto Ini',
                                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                               ),
                               onPressed: isUploading
@@ -438,7 +410,7 @@ if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                                             Navigator.pop(ctx);
                                             ScaffoldMessenger.of(context).showSnackBar(
                                               const SnackBar(
-                                                content: Text('Foto profil berhasil diunggah dan disimpan!'),
+                                                content: Text('Foto profil berhasil disimpan!'),
                                                 backgroundColor: Color(0xFF16A34A),
                                                 duration: Duration(seconds: 3),
                                               ),
@@ -452,7 +424,7 @@ if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                                         }
                                       } catch (e) {
                                         setModalState(() {
-                                          statusError = 'Terjadi kesalahan: $e';
+                                          statusError = 'Gagal upload: $e';
                                         });
                                       } finally {
                                         setModalState(() {
@@ -463,52 +435,6 @@ if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                             ),
                           ),
                         ],
-
-                        // Alternatif Manual Path
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: pathController,
-                                decoration: InputDecoration(
-                                  hintText: r'Atau ketik path file: C:\Users\...\foto.jpg',
-                                  hintStyle: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-                                  isDense: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                ),
-                                style: const TextStyle(fontSize: 11),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0F172A),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                              ),
-                              onPressed: isUploading
-                                  ? null
-                                  : () {
-                                      final p = pathController.text.trim();
-                                      if (p.isNotEmpty && File(p).existsSync()) {
-                                        setModalState(() {
-                                          selectedFilePath = p;
-                                          statusError = null;
-                                        });
-                                      } else {
-                                        setModalState(() {
-                                          statusError = 'Berkas tidak ditemukan pada path yang diberikan.';
-                                        });
-                                      }
-                                    },
-                              child: const Text('Buka', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
-                            ),
-                          ],
-                        ),
 
                         if (statusError != null) ...[
                           const SizedBox(height: 8),
@@ -611,7 +537,7 @@ if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                         child: TextField(
                           controller: urlController,
                           decoration: InputDecoration(
-                            hintText: 'https://example.com/foto.jpg',
+                            hintText: 'https://domain.com/foto.jpg',
                             hintStyle: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                             isDense: true,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -629,11 +555,76 @@ if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         ),
-                        onPressed: () => _updateAvatarUrl(urlController.text),
-                        child: const Text('Terapkan', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                        onPressed: (isUploading || isApplyingUrl)
+                            ? null
+                            : () async {
+                                String rawUrl = urlController.text.trim();
+                                if (rawUrl.isEmpty) {
+                                  setModalState(() {
+                                    statusError = 'Silakan ketik atau tempel link URL foto terlebih dahulu.';
+                                  });
+                                  return;
+                                }
+
+                                if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+                                  rawUrl = 'https://$rawUrl';
+                                }
+
+                                setModalState(() {
+                                  isApplyingUrl = true;
+                                  statusError = null;
+                                });
+
+                                try {
+                                  final res = await ApiService.updateAvatar(globalUser.id, avatarUrl: rawUrl);
+                                  if (res['status'] == 'success') {
+                                    final newUrl = res['data']?['avatar_url']?.toString() ?? res['data']?['avatar']?.toString() ?? rawUrl;
+                                    if (mounted) {
+                                      setState(() {
+                                        globalUser.updateAvatar(newUrl);
+                                      });
+                                      Navigator.pop(ctx);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Foto profil dari URL berhasil diterapkan!'),
+                                          backgroundColor: Color(0xFF16A34A),
+                                          duration: Duration(seconds: 3),
+                                        ),
+                                      );
+                                      _loadProfil();
+                                    }
+                                  } else {
+                                    setModalState(() {
+                                      statusError = res['message'] ?? 'Gagal memperbarui foto dari URL.';
+                                    });
+                                  }
+                                } catch (e) {
+                                  setModalState(() {
+                                    statusError = 'Gagal menerapkan URL: $e';
+                                  });
+                                } finally {
+                                  setModalState(() {
+                                    isApplyingUrl = false;
+                                  });
+                                }
+                              },
+                        child: isApplyingUrl
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              )
+                            : const Text('Terapkan', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
                       ),
                     ],
                   ),
+                  if (statusError != null) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      statusError!,
+                      style: const TextStyle(color: Color(0xFFDC2626), fontSize: 11, fontWeight: FontWeight.w500),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -754,7 +745,7 @@ if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                   obscureText: obscureCurrent,
                   style: const TextStyle(fontSize: 13),
                   decoration: InputDecoration(
-                    hintText: 'Contoh: password123',
+                    hintText: 'Masukkan kata sandi saat ini',
                     prefixIcon: const Icon(Icons.lock_clock_outlined, size: 18),
                     suffixIcon: IconButton(
                       icon: Icon(obscureCurrent ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 18),
@@ -917,6 +908,11 @@ if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
+          tooltip: 'Kembali',
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text('Profil Siswa', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
         actions: [
           IconButton(

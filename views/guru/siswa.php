@@ -238,14 +238,14 @@
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap Siswa <span class="text-red-500">*</span></label>
-                    <input type="text" name="nama" required placeholder="Contoh: Muhammad Rizky Pratama"
+                    <input type="text" name="nama" required placeholder="Nama lengkap siswa"
                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 focus:bg-white transition">
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Username <span class="text-red-500">*</span></label>
-                        <input type="text" name="username" required placeholder="Contoh: rizky_vii"
+                        <input type="text" name="username" required placeholder="Username unik siswa"
                                class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 focus:bg-white transition">
                         <span class="text-[10px] text-slate-400 mt-1 block">Digunakan siswa untuk masuk (login) ke aplikasi</span>
                     </div>
@@ -264,7 +264,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">NISN (Nomor Induk)</label>
-                        <input type="text" name="nisn" placeholder="Contoh: 0051234567"
+                        <input type="text" name="nisn" placeholder="10 digit NISN siswa"
                                class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 focus:bg-white transition">
                     </div>
                     <div>

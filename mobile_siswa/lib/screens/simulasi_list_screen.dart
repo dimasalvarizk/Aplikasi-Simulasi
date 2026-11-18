@@ -4,7 +4,8 @@ import '../services/api_service.dart';
 import 'simulasi_canvas_screen.dart';
 
 class SimulasiListScreen extends StatefulWidget {
-  const SimulasiListScreen({Key? key}) : super(key: key);
+  final VoidCallback? onBack;
+  const SimulasiListScreen({Key? key, this.onBack}) : super(key: key);
 
   @override
   State<SimulasiListScreen> createState() => _SimulasiListScreenState();
@@ -112,8 +113,18 @@ class _SimulasiListScreenState extends State<SimulasiListScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
+          tooltip: 'Kembali',
+          onPressed: () {
+            if (widget.onBack != null) {
+              widget.onBack!();
+            } else if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            }
+          },
+        ),
         title: const Text('Laboratorium Topologi 2D', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, size: 20),

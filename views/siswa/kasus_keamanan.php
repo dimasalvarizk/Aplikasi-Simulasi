@@ -5,7 +5,7 @@
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-semibold mb-3 border border-indigo-500/30">
                 <i class="fas fa-shield-halved"></i> Tantangan Analisis Keamanan Siber
             </div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Detektif Siber: Uji Kewaspadaanmu! 🕵️‍♂️</h1>
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Detektif Siber: Uji Kewaspadaanmu! <i class="fas fa-user-secret text-indigo-400"></i></h1>
             <p class="mt-2 text-xs sm:text-sm text-slate-300 leading-relaxed">
                 Kamu akan menerima berbagai pesan mencurigakan di WhatsApp, SMS, dan Email. Tugasmu adalah menganalisis setiap pesan: apakah pesan tersebut <b>AMAN</b> atau <b>BERBAHAYA (Phishing/Malware)</b>? Gunakan fitur inspeksi tautan untuk menemukan jebakannya!
             </p>
@@ -22,7 +22,7 @@
                 </div>
                 <?php if ($hasBadge): ?>
                     <div class="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3.5 py-1.5 rounded-xl">
-                        <span>🕵️‍♂️ Lencana Detektif Siber Aktif!</span>
+                        <span><i class="fas fa-shield-halved text-emerald-400"></i> Lencana Detektif Siber Aktif!</span>
                     </div>
                 <?php endif; ?>
             </div>

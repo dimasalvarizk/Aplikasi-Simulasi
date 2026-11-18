@@ -48,7 +48,7 @@ class ApiController
                 'GET  /api/profil'            => 'Data Profil Siswa, Badges, Level, XP',
                 'GET  /api/leaderboard'       => 'Papan Peringkat Siswa',
             ]
-        ], 'NetSim Academy RESTful API Ready.');
+        ], 'SMP Negeri 1 Karangmoncol RESTful API Ready.');
     }
 
     public function login()
@@ -978,11 +978,13 @@ class ApiController
         }
         // 3. Preset avatar / Online URL
         elseif (!empty($input['avatar_url']) || !empty($_POST['avatar_url']) || !empty($input['preset_avatar']) || !empty($_POST['preset_avatar'])) {
-            $url = trim($input['avatar_url'] ?? ($_POST['avatar_url'] ?? ($input['preset_avatar'] ?? ($_POST['preset_avatar'] ?? ''))));
+            $url = trim((string)($input['avatar_url'] ?? ($_POST['avatar_url'] ?? ($input['preset_avatar'] ?? ($_POST['preset_avatar'] ?? '')))));
             if (preg_match('/^avatar_[0-9]+\.(svg|png)$/', $url)) {
                 $avatarPath = 'public/img/avatars/' . $url;
             } elseif (str_starts_with($url, 'http://') || str_starts_with($url, 'https://') || str_starts_with($url, 'public/')) {
                 $avatarPath = $url;
+            } elseif (!empty($url)) {
+                $avatarPath = 'https://' . ltrim($url, '/');
             }
         }
 

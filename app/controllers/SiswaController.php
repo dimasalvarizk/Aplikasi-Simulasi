@@ -104,7 +104,7 @@ class SiswaController
         $simulasiAktif = $this->db->query("SELECT id, judul, tipe_topologi, xp_reward FROM simulasi_challenge WHERE is_active = 1 LIMIT 3")->fetchAll();
 
         render('siswa/dashboard', [
-            'title'         => 'Dashboard Belajar - NetSim Academy',
+            'title'         => 'Dashboard Belajar - SMP Negeri 1 Karangmoncol',
             'user'          => $user,
             'xp'            => $xp,
             'level'         => $level,
@@ -225,7 +225,7 @@ class SiswaController
         }
 
         render('siswa/materi', [
-            'title'       => $materi['judul'] . ' - NetSim Academy',
+            'title'       => $materi['judul'] . ' - SMP Negeri 1 Karangmoncol',
             'materi'      => $materi,
             'allMateri'   => $allMateri,
             'prevId'      => $prevId,
@@ -259,7 +259,7 @@ class SiswaController
             $list = $kuisList->fetchAll();
 
             render('siswa/kuis_list', [
-                'title'    => 'Daftar Kuis Topologi - NetSim Academy',
+                'title'    => 'Daftar Kuis Topologi - SMP Negeri 1 Karangmoncol',
                 'kuisList' => $list,
             ]);
             return;
@@ -478,7 +478,7 @@ class SiswaController
             $list = $challenges->fetchAll();
 
             render('siswa/simulasi_list', [
-                'title'      => 'Tantangan Simulasi Topologi - NetSim Academy',
+                'title'      => 'Tantangan Simulasi Topologi - SMP Negeri 1 Karangmoncol',
                 'challenges' => $list,
             ]);
             return;
@@ -663,7 +663,7 @@ class SiswaController
         $totalSimulasiSelesai = $statSimulasi->fetchColumn();
 
         render('siswa/profil', [
-            'title'                => 'Profil & Prestasi - NetSim Academy',
+            'title'                => 'Profil & Prestasi - SMP Negeri 1 Karangmoncol',
             'siswa'                => $siswa,
             'badges'               => $badges,
             'riwayatXp'            => $riwayatXp,
@@ -860,7 +860,7 @@ class SiswaController
         $kelasList = $this->db->query("SELECT DISTINCT kelas FROM users WHERE role = 'siswa' AND kelas IS NOT NULL ORDER BY kelas")->fetchAll(PDO::FETCH_COLUMN);
 
         render('siswa/leaderboard', [
-            'title'       => 'Papan Peringkat (Leaderboard) - NetSim Academy',
+            'title'       => 'Papan Peringkat (Leaderboard) - SMP Negeri 1 Karangmoncol',
             'leaderboard' => $leaderboard,
             'kelasList'   => $kelasList,
             'currentKelas'=> $kelas,
@@ -1544,7 +1544,7 @@ class SiswaController
         }
 
         render('siswa/kasus_keamanan', [
-            'title'          => 'Detektif Siber - NetSim Academy',
+            'title'          => 'Detektif Siber - SMP Negeri 1 Karangmoncol',
             'kasusList'      => $kasusList,
             'totalKasus'     => count($kasusList),
             'totalSelesai'   => $totalSelesai,

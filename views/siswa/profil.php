@@ -9,13 +9,13 @@ $presetAvatars = [
     ['file' => 'avatar_3.png', 'nama' => 'Cendekia'],
     ['file' => 'avatar_4.png', 'nama' => 'Kreatif'],
     ['file' => 'avatar_5.png', 'nama' => 'Teknisi LAN'],
-    ['file' => 'avatar_6.png', 'nama' => 'Bot NetSim'],
+    ['file' => 'avatar_6.png', 'nama' => 'Bot SMPN 1'],
     ['file' => 'avatar_7.png', 'nama' => 'Cyber Gamer'],
     ['file' => 'avatar_8.png', 'nama' => 'Network Master'],
     ['file' => 'avatar_9.png', 'nama' => 'Spesialis LAN'],
     ['file' => 'avatar_10.png', 'nama' => 'Topologi Pro'],
     ['file' => 'avatar_11.png', 'nama' => 'Arsitek Jaringan'],
-    ['file' => 'avatar_12.png', 'nama' => 'Juara NetSim'],
+    ['file' => 'avatar_12.png', 'nama' => 'Bintang Sekolah'],
 ];
 ?>
 
@@ -323,7 +323,7 @@ $presetAvatars = [
                 <!-- Kata Sandi Lama / Sementara -->
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">Kata Sandi Saat Ini / Sementara <span class="text-rose-500">*</span></label>
-                    <input type="password" name="current_password" required placeholder="Contoh: password123" 
+                    <input type="password" name="current_password" required placeholder="Masukkan kata sandi saat ini" 
                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition">
                     <span class="text-[10.5px] text-slate-400 mt-1 block">Kata sandi yang Anda gunakan saat login.</span>
                 </div>

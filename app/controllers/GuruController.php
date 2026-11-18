@@ -86,7 +86,7 @@ class GuruController
         } catch (Throwable $e) {}
 
         render('guru/dashboard', [
-            'title'             => 'Dashboard Guru - NetSim Academy',
+            'title'             => 'Dashboard Guru - SMP Negeri 1 Karangmoncol',
             'totalSiswa'        => $totalSiswa,
             'totalModul'        => $totalModul,
             'totalKuis'         => $totalKuis,
@@ -167,7 +167,7 @@ class GuruController
         }
 
         render('guru/siswa', [
-            'title'      => 'Data Siswa & Kemajuan - NetSim Academy',
+            'title'      => 'Data Siswa & Kemajuan - SMP Negeri 1 Karangmoncol',
             'siswa'      => $siswa,
             'search'     => $search,
             'kelas'      => $kelas,
@@ -537,7 +537,7 @@ class GuruController
         )->fetchAll();
 
         render('guru/modul', [
-            'title' => 'Kelola Modul Pembelajaran - NetSim Academy',
+            'title' => 'Kelola Modul Pembelajaran - SMP Negeri 1 Karangmoncol',
             'modul' => $modul,
             'flash' => ['success' => getFlash('success'), 'error' => getFlash('error')],
         ]);
@@ -573,7 +573,7 @@ class GuruController
         }
 
         render('guru/modul_create', [
-            'title'      => 'Tambah Modul Baru - NetSim Academy',
+            'title'      => 'Tambah Modul Baru - SMP Negeri 1 Karangmoncol',
             'csrf_token' => generateToken(),
         ]);
     }
@@ -755,7 +755,7 @@ class GuruController
         )->fetchAll();
 
         render('guru/kuis', [
-            'title' => 'Bank Kuis & Ujian - NetSim Academy',
+            'title' => 'Bank Kuis & Ujian - SMP Negeri 1 Karangmoncol',
             'kuis'  => $kuis,
             'flash' => ['success' => getFlash('success'), 'error' => getFlash('error')],
         ]);
@@ -827,7 +827,7 @@ class GuruController
         $modulList = $this->db->query("SELECT id, judul FROM modul ORDER BY urutan ASC")->fetchAll();
 
         render('guru/kuis_create', [
-            'title'      => 'Buat Kuis Baru - NetSim Academy',
+            'title'      => 'Buat Kuis Baru - SMP Negeri 1 Karangmoncol',
             'modulList'  => $modulList,
             'csrf_token' => generateToken(),
         ]);
@@ -954,7 +954,7 @@ class GuruController
         $kelasList = $this->db->query("SELECT DISTINCT kelas FROM users WHERE role = 'siswa' AND kelas IS NOT NULL ORDER BY kelas")->fetchAll(PDO::FETCH_COLUMN);
 
         render('guru/laporan', [
-            'title'        => 'Rekapitulasi Nilai & Laporan Kelas - NetSim Academy',
+            'title'        => 'Rekapitulasi Nilai & Laporan Kelas - SMP Negeri 1 Karangmoncol',
             'siswaList'    => $siswaList,
             'kuisList'     => $kuisList,
             'kelasList'    => $kelasList,
@@ -1039,7 +1039,7 @@ class GuruController
     }
 
     // =========================================================
-    // SIMULASI TOPOLOGI (LAB GURU & DEMO)
+    // SIMULASI TOPOLOGI (LAB GURU)
     // =========================================================
 
     public function simulasi($id = null)
@@ -1829,7 +1829,7 @@ class GuruController
         $guru = $stmt->fetch();
 
         render('guru/profil', [
-            'title' => 'Profil Pengajar - NetSim Academy',
+            'title' => 'Profil Pengajar - SMP Negeri 1 Karangmoncol',
             'guru'  => $guru,
             'flash' => ['success' => getFlash('success'), 'error' => getFlash('error')],
         ]);
@@ -1973,7 +1973,7 @@ class GuruController
         $persenAkurasi = $totalPengerjaan > 0 ? round(($totalBenar / $totalPengerjaan) * 100, 1) : 0;
 
         render('guru/kasus_keamanan', [
-            'title'           => 'Tantangan Studi Kasus Keamanan - Guru NetSim',
+            'title'           => 'Tantangan Studi Kasus Keamanan - Guru SMP Negeri 1 Karangmoncol',
             'kasusList'       => $kasusList,
             'totalKasus'      => $totalKasus,
             'totalPengerjaan' => $totalPengerjaan,

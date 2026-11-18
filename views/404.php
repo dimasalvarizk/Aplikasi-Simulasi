@@ -15,7 +15,7 @@
         <div>
             <h1 class="text-2xl font-black text-gray-800">Halaman Tidak Ditemukan</h1>
             <p class="text-xs text-gray-500 mt-2 leading-relaxed">
-                Jalur rute atau link yang Anda tuju tampaknya tidak terhubung ke jaringan server NetSim Academy.
+                Jalur rute atau link yang Anda tuju tampaknya tidak terhubung ke jaringan server SMP Negeri 1 Karangmoncol.
             </p>
         </div>
         <div class="pt-2">

@@ -189,18 +189,54 @@ class _KuisScreenState extends State<KuisScreen> {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
+  void _showExitConfirmation() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Batalkan Kuis?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: const Text('Progres kuis yang belum dikirim tidak akan tersimpan. Yakin ingin keluar?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tetap di Kuis'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626), foregroundColor: Colors.white),
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pop(context);
+            },
+            child: const Text('Keluar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: Text(widget.judul, style: const TextStyle(fontSize: 14))),
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Text(widget.judul, style: const TextStyle(fontSize: 14)),
+        ),
         body: const Center(child: CircularProgressIndicator(color: Color(0xFF0F172A))),
       );
     }
 
     if (_error != null || _soalList.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text(widget.judul, style: const TextStyle(fontSize: 14))),
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Text(widget.judul, style: const TextStyle(fontSize: 14)),
+        ),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -234,10 +270,20 @@ class _KuisScreenState extends State<KuisScreen> {
 
     final isLowTime = _remainingSeconds <= 60;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: Text(widget.judul, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+    return WillPopScope(
+      onWillPop: () async {
+        _showExitConfirmation();
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
+            tooltip: 'Kembali',
+            onPressed: _showExitConfirmation,
+          ),
+          title: Text(widget.judul, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
         actions: [
           Center(
             child: Container(
@@ -531,6 +577,7 @@ class _KuisScreenState extends State<KuisScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 }

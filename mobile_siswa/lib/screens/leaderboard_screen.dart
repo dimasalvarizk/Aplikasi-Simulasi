@@ -4,7 +4,8 @@ import '../models/user_model.dart';
 import '../services/api_service.dart';
 
 class LeaderboardScreen extends StatefulWidget {
-  const LeaderboardScreen({Key? key}) : super(key: key);
+  final VoidCallback? onBack;
+  const LeaderboardScreen({Key? key, this.onBack}) : super(key: key);
 
   @override
   State<LeaderboardScreen> createState() => _LeaderboardScreenState();
@@ -50,8 +51,18 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
+          tooltip: 'Kembali',
+          onPressed: () {
+            if (widget.onBack != null) {
+              widget.onBack!();
+            } else if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            }
+          },
+        ),
         title: const Text('Papan Peringkat Siswa', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, size: 20),
