@@ -290,14 +290,16 @@ CREATE TABLE IF NOT EXISTS kasus_keamanan (
     platform VARCHAR(50) DEFAULT 'whatsapp',
     pengirim VARCHAR(100) NOT NULL,
     isi_pesan TEXT NOT NULL,
+    link_url TEXT NULL,
     lampiran_nama VARCHAR(255) NULL,
     tautan_terlihat VARCHAR(255) NULL,
     tautan_asli VARCHAR(500) NULL,
     is_aman TINYINT(1) DEFAULT 0,
     ciri_bahaya TEXT NULL,
     penjelasan TEXT NOT NULL,
-    xp_reward INT DEFAULT 20,
+    xp_reward INT DEFAULT 25,
     is_published TINYINT(1) DEFAULT 1,
+    is_active TINYINT(1) DEFAULT 1,
     urutan INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -316,53 +318,103 @@ CREATE TABLE IF NOT EXISTS siswa_kasus_progress (
     xp_earned INT DEFAULT 0,
     attempt_count INT DEFAULT 1,
     completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY unique_siswa_kasus (user_id, kasus_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (kasus_id) REFERENCES kasus_keamanan(id) ON DELETE CASCADE
 );
 
 -- -----------------------------------------------------------
+-- Tabel Notifikasi Sistem Real-time (Portal Guru & Siswa)
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS notifikasi (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NULL,
+    role_target VARCHAR(20) DEFAULT 'guru' COMMENT 'guru, siswa, atau all',
+    tipe VARCHAR(50) DEFAULT 'info',
+    judul VARCHAR(200) NOT NULL,
+    pesan TEXT NOT NULL,
+    icon VARCHAR(50) DEFAULT 'fa-bell',
+    color VARCHAR(30) DEFAULT 'blue',
+    link VARCHAR(255) NULL,
+    is_read TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- -----------------------------------------------------------
 -- DATA AWAL (SEED)
 -- -----------------------------------------------------------
 
--- Akun guru / pengelola default (password: password123)
-INSERT INTO users (nama, username, email, password, role, nip, avatar) VALUES
+-- 1. Akun Guru & Siswa Default (password: password123)
+INSERT INTO users (nama, username, email, password, role, kelas, nisn, nip, avatar) VALUES
 ('Angzal Maolana, S.Pd', 'angzal', 'angzal@smpn1karangmoncol.sch.id',
- '$2y$12$YKFqC1JJ0FPCKd5mU2gxM.m9z2f/rN0FhcRdHiijCjy7F.YGpH34G', 'guru', '198703122014021001', 'public/img/avatars/avatar_8.png'),
+ '$2y$12$YKFqC1JJ0FPCKd5mU2gxM.m9z2f/rN0FhcRdHiijCjy7F.YGpH34G', 'guru', NULL, NULL, '198703122014021001', 'public/img/avatars/avatar_8.png'),
 ('Hana Sifakhatin, S.Pd', 'hana', 'hana@smpn1karangmoncol.sch.id',
- '$2y$12$YKFqC1JJ0FPCKd5mU2gxM.m9z2f/rN0FhcRdHiijCjy7F.YGpH34G', 'guru', '199008252015032002', 'public/img/avatars/avatar_2.png');
+ '$2y$12$YKFqC1JJ0FPCKd5mU2gxM.m9z2f/rN0FhcRdHiijCjy7F.YGpH34G', 'guru', NULL, NULL, '199008252015032002', 'public/img/avatars/avatar_2.png'),
+('Ahmad Fauzi', 'fauzi', 'siswa@simulasi.test',
+ '$2y$12$YKFqC1JJ0FPCKd5mU2gxM.m9z2f/rN0FhcRdHiijCjy7F.YGpH34G', 'siswa', 'VII A', '0051234567', NULL, 'public/uploads/avatars/avatar_2_1794977039.png'),
+('Siti Rahmawati', 'siswa2', 'siti@simulasi.test',
+ '$2y$12$YKFqC1JJ0FPCKd5mU2gxM.m9z2f/rN0FhcRdHiijCjy7F.YGpH34G', 'siswa', 'VII A', '0051234568', NULL, 'public/img/avatars/avatar_2.png'),
+('Bambang Wicaksono', 'siswa3', 'bambang@simulasi.test',
+ '$2y$12$YKFqC1JJ0FPCKd5mU2gxM.m9z2f/rN0FhcRdHiijCjy7F.YGpH34G', 'siswa', 'VII B', '0051234569', NULL, 'public/img/avatars/avatar_3.png');
 
--- Badges awal
+-- 2. Gamifikasi / Progress Siswa Awal
+INSERT INTO siswa_progress (user_id, total_xp, level, streak_days, last_activity) VALUES
+(3, 450, 5, 7, CURRENT_DATE),
+(4, 720, 8, 12, CURRENT_DATE),
+(5, 180, 2, 3, CURRENT_DATE);
+
+-- 3. Badges Awal
 INSERT INTO badges (code, nama, deskripsi, icon, xp_reward, kondisi_type, kondisi_nilai) VALUES
-('pemula',       'Pemula Jaringan',   'Selamat datang! Kamu telah bergabung.',    '🌱', 10,  'level',            1),
-('xp_100',       'Kolektor XP',       'Kumpulkan 100 XP pertamamu!',              '⭐', 20,  'xp_total',       100),
-('xp_500',       'XP Hunter',         'Kumpulkan 500 XP!',                        '🌟', 50,  'xp_total',       500),
-('level_5',      'Network Apprentice','Capai Level 5!',                            '🥉', 30,  'level',            5),
-('level_10',     'Network Engineer',  'Capai Level 10!',                           '🥈', 60,  'level',           10),
-('level_20',     'Network Master',    'Capai Level 20!',                           '🏆', 100, 'level',           20),
-('kuis_1',       'Quiz Starter',      'Selesaikan kuis pertamamu!',               '📝', 15,  'kuis_selesai',     1),
-('kuis_10',      'Quiz Addict',       'Selesaikan 10 kuis!',                      '📚', 40,  'kuis_selesai',    10),
-('simulasi_1',   'Network Builder',   'Buat topologi pertamamu!',                 '🔌', 20,  'simulasi_selesai', 1),
-('simulasi_5',   'Topology Expert',   'Selesaikan 5 simulasi!',                   '🖧', 50,  'simulasi_selesai', 5),
-('streak_7',     'Konsisten',         'Login 7 hari berturut-turut!',             '🔥', 35,  'streak',           7);
+('pemula',          'Pemula Jaringan',    'Selamat datang! Kamu telah bergabung di NetSim Academy.', '🌱', 10,  'level',            1),
+('xp_100',          'Kolektor XP',        'Kumpulkan 100 XP pertamamu!',                               '⭐', 20,  'xp_total',       100),
+('xp_500',          'XP Hunter',          'Kumpulkan 500 XP!',                                         '🌟', 50,  'xp_total',       500),
+('level_5',         'Network Apprentice', 'Capai Level 5!',                                             '🥉', 30,  'level',            5),
+('level_10',        'Network Engineer',   'Capai Level 10!',                                            '🥈', 60,  'level',           10),
+('level_20',        'Network Master',     'Capai Level 20!',                                            '🏆', 100, 'level',           20),
+('kuis_1',          'Quiz Starter',       'Selesaikan kuis pertamamu!',                                '📝', 15,  'kuis_selesai',     1),
+('kuis_10',         'Quiz Addict',        'Selesaikan 10 kuis!',                                       '📚', 40,  'kuis_selesai',    10),
+('simulasi_1',      'Network Builder',    'Buat topologi pertamamu di canvas simulasi!',               '🔌', 20,  'simulasi_selesai', 1),
+('simulasi_5',      'Topology Expert',    'Selesaikan 5 simulasi!',                                    '🖧', 50,  'simulasi_selesai', 5),
+('streak_7',        'Konsisten',          'Login 7 hari berturut-turut!',                              '🔥', 35,  'streak',           7),
+('cyber_detective', 'Detektif Siber',     'Pecahkan tantangan analisis keamanan internet & anti-phishing!', '🕵️‍♂️', 50, 'xp_total', 10);
 
--- Modul awal
+-- 4. Modul Awal
 INSERT INTO modul (guru_id, judul, deskripsi, urutan, is_published) VALUES
-(1, 'Pengantar Jaringan Komputer', 'Dasar-dasar jaringan komputer dan topologi', 1, 1),
-(1, 'Topologi Star',  'Memahami dan mensimulasikan topologi Star',  2, 1),
-(1, 'Topologi Bus',   'Memahami dan mensimulasikan topologi Bus',   3, 1),
-(1, 'Topologi Ring',  'Memahami dan mensimulasikan topologi Ring',  4, 0);
+(1, 'Pengantar Jaringan Komputer', 'Dasar-dasar jaringan komputer dan klasifikasi jaringan', 1, 1),
+(1, 'Topologi Star (Bintang)',     'Memahami karakteristik, kelebihan, kelemahan, dan implementasi topologi Star', 2, 1),
+(1, 'Topologi Bus (Jalur Lurus)',  'Memahami konsep backbone kabel koaksial, terminator, dan cara kerja topologi Bus', 3, 1),
+(1, 'Topologi Ring & Mesh',        'Konsep token passing pada topologi Ring dan redundansi penuh pada topologi Mesh', 4, 1);
 
--- Materi awal
+-- 5. Materi Awal
 INSERT INTO materi (modul_id, judul, konten, tipe, urutan, xp_reward, is_published) VALUES
 (1, 'Apa itu Jaringan Komputer?',
  '<h2>Pengantar Jaringan Komputer</h2><p>Jaringan komputer adalah sekumpulan komputer dan perangkat yang saling terhubung untuk berbagi sumber daya dan informasi.</p><h3>Manfaat Jaringan Komputer</h3><ul><li>Berbagi data dan informasi</li><li>Berbagi perangkat (printer, scanner)</li><li>Komunikasi antar pengguna</li><li>Akses internet bersama</li></ul>',
- 'teori', 1, 10, 1),
+ 'teori', 1, 15, 1),
 
 (1, 'Perangkat Jaringan Dasar',
  '<h2>Perangkat-Perangkat dalam Jaringan</h2><p>Beberapa perangkat utama yang digunakan dalam jaringan komputer:</p><h3>1. Router</h3><p>Router adalah perangkat yang menghubungkan jaringan yang berbeda dan menentukan jalur terbaik untuk transmisi data.</p><h3>2. Switch</h3><p>Switch adalah perangkat yang menghubungkan beberapa perangkat dalam satu jaringan lokal (LAN).</p><h3>3. Hub</h3><p>Hub adalah perangkat yang menyebarkan sinyal ke semua port.</p><h3>4. PC/Komputer</h3><p>End-device yang menjadi pengguna layanan jaringan.</p>',
- 'teori', 2, 10, 1),
+ 'teori', 2, 15, 1),
 
-(2, 'Konsep Topologi Star',
+(2, 'Konsep & Analisis Topologi Star',
  '<h2>Topologi Star (Bintang)</h2><p>Topologi star adalah topologi jaringan di mana semua node terhubung ke satu titik pusat (switch/hub).</p><h3>Karakteristik</h3><ul><li>Semua perangkat terhubung ke switch/hub pusat</li><li>Jika satu kabel putus, hanya satu perangkat yang terpengaruh</li><li>Mudah dalam troubleshooting</li></ul><h3>Kelebihan</h3><ul><li>Mudah dikelola dan dikembangkan</li><li>Keandalan tinggi</li><li>Performa baik</li></ul><h3>Kekurangan</h3><ul><li>Jika switch/hub pusat rusak, seluruh jaringan down</li><li>Membutuhkan banyak kabel</li></ul>',
- 'teori', 1, 15, 1);
+ 'teori', 1, 20, 1),
+
+(3, 'Konsep & Analisis Topologi Bus',
+ '<h2>Topologi Bus</h2><p>Topologi Bus menghubungkan semua perangkat komputer di sepanjang satu jalur kabel utama yang disebut backbone. Setiap ujung kabel backbone harus ditutup dengan komponen terminator.</p><h3>Kelebihan</h3><ul><li>Hemat penggunaan kabel</li><li>Biaya implementasi murah</li></ul><h3>Kekurangan</h3><ul><li>Jika kabel utama backbone putus di satu titik, seluruh jaringan akan lumpuh</li><li>Sering terjadi tabrakan data (collision)</li></ul>',
+ 'teori', 1, 20, 1);
+
+-- 6. Tantangan Simulasi Topologi Awal
+INSERT INTO simulasi_challenge (modul_id, guru_id, judul, deskripsi, tipe_topologi, instruksi, target_config, xp_reward, is_active) VALUES
+(2, 1, 'Tantangan 1: Rangkai Topologi Star Lab Komputer', 'Rangkai topologi Star yang menghubungkan 3 PC client ke 1 switch pusat secara simetris.', 'star', '1. Tarik 1 unit <strong>Switch</strong> ke tengah canvas.<br>2. Tarik minimal 3 unit <strong>PC</strong> dan letakkan mengelilingi Switch.<br>3. Hubungkan setiap PC ke Switch pusat menggunakan kabel koneksi.<br>4. Klik tombol <strong>\"Validasi Topologi\"</strong> untuk menguji konfigurasi dan klaim XP!', '{"type":"star","min_pcs":3,"center_device":"switch"}', 50, 1),
+(3, 1, 'Tantangan 2: Rangkai Jalur Topologi Bus', 'Susun 4 unit workstation yang saling terhubung dalam satu lintasan bus lurus.', 'bus', '1. Tarik minimal 4 unit <strong>PC</strong> atau Server ke canvas secara horizontal.<br>2. Hubungkan perangkat secara berurutan membentuk jalur rantai/bus.<br>3. Klik tombol <strong>\"Validasi Topologi\"</strong> untuk memeriksa susunan topologi Bus Anda!', '{"type":"bus","min_pcs":4}', 50, 1),
+(4, 1, 'Tantangan 3: Rangkai Topologi Ring Tertutup', 'Buat jalur sirkular tertutup di mana setiap node terhubung tepat ke dua tetangganya.', 'ring', '1. Tarik minimal 4 unit <strong>PC</strong> ke canvas membentuk lingkaran.<br>2. Hubungkan setiap PC ke tetangganya hingga membentuk satu loop tertutup (Ring).<br>3. Klik <strong>\"Validasi Topologi\"</strong> untuk memverifikasi token ring loop!', '{"type":"ring","min_pcs":4}', 60, 1);
+
+-- 7. Kasus Keamanan Siber Awal (Detektif Siber)
+INSERT INTO kasus_keamanan (guru_id, judul, kategori, platform, pengirim, isi_pesan, link_url, tautan_terlihat, tautan_asli, lampiran_nama, is_aman, ciri_bahaya, penjelasan, xp_reward, is_published, is_active, urutan) VALUES
+(1, 'Pesan WhatsApp Undangan Pernikahan (.APK)', 'Malware APK', 'whatsapp', '+62 813-9821-4402 (Nomor Tak Dikenal)', 'Halo kak, kami bermaksud mengundang kakak dan keluarga ke acara pernikahan kami besok Minggu. Mohon dibuka surat undangannya ya kak, ditunggu kehadirannya.', 'Surat_Undangan_Pernikahan.apk (4.8 MB)', 'Surat_Undangan_Pernikahan.apk (4.8 MB)', 'Surat_Undangan_Pernikahan.apk (4.8 MB)', 'Undangan_Pernikahan.apk', 0, 'Format file berupa aplikasi Android (.apk) bukan gambar/PDF. Mengirimkan file aplikasi dari orang asing sangat berisiko.', 'BERBAHAYA! Surat undangan resmi tidak pernah berbentuk file aplikasi .apk. Jika file ini di-install, malware akan membaca SMS/OTP dan mengambil alih data ponsel Anda.', 25, 1, 1, 1),
+(1, 'SMS Hadiah Kuota Belajar 50 GB', 'Phishing Kuota', 'sms', 'KEMDIKBUD-INFO (0857-1122-3344)', 'Selamat! Nomor Anda terpilih mendapatkan Bantuan Kuota Internet Belajar 50GB Kemdikbud tahap 2. Segera aktifkan kuota Anda sebelum pukul 24.00 di tautan berikut.', 'http://kuotabelajar-kemdikbud.free-claim.site/login', 'http://kuotabelajar-kemdikbud.free-claim.site/login', 'http://kuotabelajar-kemdikbud.free-claim.site/login', NULL, 0, 'Domain website palsu (.free-claim.site bukan .kemdikbud.go.id), tidak menggunakan HTTPS, dan menggunakan batas waktu darurat.', 'BERBAHAYA! Kemdikbud hanya menyalurkan bantuan melalui sekolah secara langsung dan domain resminya selalu berakhiran .kemdikbud.go.id. Tautan ini adalah jebakan phishing.', 25, 1, 1, 2),
+(1, 'Pengumuman Jadwal Ulangan SMPN 1 Karangmoncol', 'Link Resmi Sekolah', 'whatsapp', 'Bpk. Angzal Maolana, S.Pd (Wali Kelas VII A)', 'Assalamu\'alaikum wr. wb. Anak-anak sekalian, jadwal Penilaian Akhir Semester (PAS) Genap telah dirilis. Silakan unduh jadwal resmi dan tata tertib ujian di website resmi sekolah kita.', 'https://smpn1karangmoncol.sch.id/agenda/jadwal-pas-genap', 'https://smpn1karangmoncol.sch.id/agenda/jadwal-pas-genap', 'https://smpn1karangmoncol.sch.id/agenda/jadwal-pas-genap', NULL, 1, 'Tautan aman, domain resmi sekolah berakhiran .sch.id dan menggunakan protokol terenkripsi https://.', 'AMAN! Tautan ini resmi dari Guru Pengampu dan mengarah langsung ke domain sekolah berakhiran .sch.id yang terverifikasi dan aman untuk dibuka.', 25, 1, 1, 3),
+(1, 'Email Peringatan Akun Google Dibekukan', 'Phishing Akun', 'email', 'Google Security Alert <support@g00gle-security-center.com>', 'PERINGATAN: Kami mendeteksi aktivitas login mencurigakan pada akun Google Anda. Akun Anda akan dinonaktifkan dalam 24 jam kecuali Anda memverifikasi kata sandi sekarang.', 'http://verify-myaccount-google.com/auth/login', 'http://verify-myaccount-google.com/auth/login', 'http://verify-myaccount-google.com/auth/login', NULL, 0, 'Alamat email pengirim palsu (menggunakan angka 0 g00gle bukan google.com), URL login palsu, dan menakut-nakuti pengguna.', 'BERBAHAYA! Google tidak pernah mengirimkan email darurat dengan tautan login di luar domain resmi google.com. Trik ini sengaja dibuat agar Anda panik lalu memasukkan kata sandi.', 25, 1, 1, 4),
+(1, 'Tawaran Diamond & Skin Game Gratis', 'Scam Game Online', 'medsos', 'Event MLBB Official (@diamond_gratis_mlbb)', 'Spesial Ulang Tahun! Klaim 10.000 Diamond dan Skin Collector gratis hari ini. Cukup login dan masukkan ID serta kata sandi akun Moonton Anda di tautan event ini!', 'http://event-claim-diamond-mlbb.xyz/spin', 'http://event-claim-diamond-mlbb.xyz/spin', 'http://event-claim-diamond-mlbb.xyz/spin', NULL, 0, 'Meminta password akun game, domain gratisan (.xyz), dan janji hadiah yang tidak masuk akal.', 'BERBAHAYA! Developer game resmi tidak pernah meminta kata sandi pemain untuk membagikan hadiah. Website ini bertujuan membajak akun game Anda.', 25, 1, 1, 5);
