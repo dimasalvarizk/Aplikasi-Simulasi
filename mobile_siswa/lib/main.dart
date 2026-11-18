@@ -93,7 +93,7 @@ class SimulasiTopologiApp extends StatelessWidget {
           thickness: 1,
           space: 1,
         ),
-        dialogTheme: DialogTheme(
+        dialogTheme: DialogThemeData(
           backgroundColor: Colors.white,
           surfaceTintColor: Colors.transparent,
           elevation: 6,
