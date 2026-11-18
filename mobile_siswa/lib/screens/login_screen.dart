@@ -387,6 +387,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 runSpacing: 8,
                 children: [
                   ActionChip(
+                    avatar: const Icon(Icons.wifi, size: 14, color: Color(0xFF2563EB)),
+                    label: const Text('WiFi (192.168.1.8)', style: TextStyle(fontSize: 11)),
+                    backgroundColor: const Color(0xFFEFF6FF),
+                    onPressed: () {
+                      setDialogState(() {
+                        urlController.text = 'http://192.168.1.8/aplikasi-simulasi/api';
+                      });
+                    },
+                  ),
+                  ActionChip(
                     avatar: const Icon(Icons.android, size: 14, color: Color(0xFF16A34A)),
                     label: const Text('Emulator (10.0.2.2)', style: TextStyle(fontSize: 11)),
                     backgroundColor: const Color(0xFFF0FDF4),

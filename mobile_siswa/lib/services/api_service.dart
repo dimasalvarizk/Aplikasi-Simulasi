@@ -45,6 +45,7 @@ class ApiService {
       try {
         if (defaultTargetPlatform == TargetPlatform.android) {
           const candidates = [
+            'http://192.168.1.8/aplikasi-simulasi/api',
             'http://192.168.0.193/aplikasi-simulasi/api',
             'http://10.0.2.2/aplikasi-simulasi/api',
             'http://10.0.2.2:8000/api',
