@@ -179,18 +179,23 @@ $presetAvatars = [
 
     <!-- MODAL UNGGAH & PILIH FOTO PROFIL -->
     <div x-show="modalAvatar" x-cloak 
-         class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+         class="fixed inset-0 z-50 overflow-y-auto bg-transparent flex items-center justify-center p-4">
         <div @click.outside="modalAvatar = false" 
              class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100">
             
             <!-- Header Modal -->
-            <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+            <div class="px-6 py-4 bg-white border-b border-slate-100 text-slate-800 flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <i class="fas fa-camera text-indigo-400 text-sm"></i>
-                    <h3 class="font-bold text-sm">Ganti Foto Profil Siswa</h3>
+                    <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm text-slate-900">Ganti Foto Profil Siswa</h3>
+                        <p class="text-[11px] text-slate-500">Pilih foto pribadi atau gunakan avatar animasi</p>
+                    </div>
                 </div>
-                <button type="button" @click="modalAvatar = false" class="text-slate-400 hover:text-white transition">
-                    <i class="fas fa-times"></i>
+                <button type="button" @click="modalAvatar = false" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition">
+                    <i class="fas fa-times text-xs"></i>
                 </button>
             </div>
 
@@ -286,20 +291,23 @@ $presetAvatars = [
 
     <!-- MODAL GANTI KATA SANDI SISWA -->
     <div x-show="modalPassword" x-cloak 
-         class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+         class="fixed inset-0 z-50 overflow-y-auto bg-transparent flex items-center justify-center p-4">
         <div @click.outside="modalPassword = false" 
              class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100">
             
             <!-- Header Modal -->
-            <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+            <div class="px-6 py-4 bg-white border-b border-slate-100 text-slate-800 flex items-center justify-between">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs">
+                    <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-sm">
                         <i class="fas fa-key"></i>
                     </div>
-                    <h3 class="font-bold text-sm">Ganti Kata Sandi Siswa</h3>
+                    <div>
+                        <h3 class="font-bold text-sm text-slate-900">Ganti Kata Sandi Siswa</h3>
+                        <p class="text-[11px] text-slate-500">Perbarui kata sandi akunmu</p>
+                    </div>
                 </div>
-                <button type="button" @click="modalPassword = false" class="text-slate-400 hover:text-white transition">
-                    <i class="fas fa-times"></i>
+                <button type="button" @click="modalPassword = false" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition">
+                    <i class="fas fa-times text-xs"></i>
                 </button>
             </div>
 

@@ -33,6 +33,14 @@ class GuruController
         $totalKuis  = (int)$this->db->query("SELECT COUNT(*) FROM kuis")->fetchColumn();
         $rataNilai  = (float)$this->db->query("SELECT COALESCE(AVG(skor), 0) FROM hasil_kuis")->fetchColumn();
 
+        // Statistik Tantangan Detektif Siber (Kasus Keamanan)
+        $totalKasus = 0;
+        $totalKasusSelesai = 0;
+        try {
+            $totalKasus = (int)$this->db->query("SELECT COUNT(*) FROM kasus_keamanan WHERE is_published = 1")->fetchColumn();
+            $totalKasusSelesai = (int)$this->db->query("SELECT COUNT(*) FROM siswa_kasus_progress WHERE is_correct = 1")->fetchColumn();
+        } catch (Throwable $e) {}
+
         // Daftar modul terbaru
         $modul = $this->db->query(
             "SELECT m.*, COUNT(mt.id) AS jumlah_materi
@@ -43,14 +51,15 @@ class GuruController
              LIMIT 5"
         )->fetchAll();
 
-        // Siswa aktif terbaru
+        // Siswa aktif & Papan Peringkat Terintegrasi (XP total dari Kuis, Simulasi Topologi, & Tantangan Siber)
         $siswaAktif = $this->db->query(
-            "SELECT u.id, u.nama, u.username, u.email, u.kelas, u.last_login,
-                    COALESCE(g.total_xp, 0) AS total_xp, COALESCE(g.level, 1) AS level
+            "SELECT u.id, u.nama, u.username, u.email, u.kelas, u.avatar, u.last_login,
+                    COALESCE(g.total_xp, 0) AS total_xp, COALESCE(g.level, 1) AS level,
+                    (SELECT COUNT(*) FROM siswa_kasus_progress skp WHERE skp.user_id = u.id AND skp.is_correct = 1) AS kasus_selesai
              FROM users u
              LEFT JOIN gamifikasi g ON g.user_id = u.id
              WHERE u.role = 'siswa' AND u.is_active = 1
-             ORDER BY u.last_login DESC, g.total_xp DESC
+             ORDER BY g.total_xp DESC, u.last_login DESC
              LIMIT 8"
         )->fetchAll();
 
@@ -64,16 +73,31 @@ class GuruController
              LIMIT 6"
         )->fetchAll();
 
+        // Riwayat aktivitas terbaru terintegrasi (Log XP: Tantangan Siber, Kuis, Simulasi, Modul)
+        $riwayatAktivitas = [];
+        try {
+            $riwayatAktivitas = $this->db->query(
+                "SELECT xl.*, u.nama AS siswa_nama, u.kelas AS siswa_kelas, u.avatar AS siswa_avatar
+                 FROM xp_log xl
+                 JOIN users u ON u.id = xl.user_id
+                 ORDER BY xl.created_at DESC, xl.id DESC
+                 LIMIT 8"
+            )->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {}
+
         render('guru/dashboard', [
-            'title'       => 'Dashboard Guru - NetSim Academy',
-            'totalSiswa'  => $totalSiswa,
-            'totalModul'  => $totalModul,
-            'totalKuis'   => $totalKuis,
-            'rataNilai'   => round($rataNilai, 1),
-            'modul'       => $modul,
-            'siswaAktif'  => $siswaAktif,
-            'kuisTerbaru' => $kuisTerbaru,
-            'flash'       => ['success' => getFlash('success'), 'error' => getFlash('error')],
+            'title'             => 'Dashboard Guru - NetSim Academy',
+            'totalSiswa'        => $totalSiswa,
+            'totalModul'        => $totalModul,
+            'totalKuis'         => $totalKuis,
+            'rataNilai'         => round($rataNilai, 1),
+            'totalKasus'        => $totalKasus,
+            'totalKasusSelesai' => $totalKasusSelesai,
+            'modul'             => $modul,
+            'siswaAktif'        => $siswaAktif,
+            'kuisTerbaru'       => $kuisTerbaru,
+            'riwayatAktivitas'  => $riwayatAktivitas,
+            'flash'             => ['success' => getFlash('success'), 'error' => getFlash('error')],
         ]);
     }
 
@@ -117,7 +141,8 @@ class GuruController
                     COALESCE(g.total_xp, 0) AS total_xp,
                     COALESCE(g.level, 1) AS level,
                     (SELECT AVG(skor) FROM hasil_kuis hk WHERE hk.user_id = u.id) AS rata_nilai,
-                    (SELECT COUNT(*) FROM user_badges ub WHERE ub.user_id = u.id) AS total_badges
+                    (SELECT COUNT(*) FROM user_badges ub WHERE ub.user_id = u.id) AS total_badges,
+                    (SELECT COUNT(*) FROM siswa_kasus_progress skp WHERE skp.user_id = u.id AND skp.is_correct = 1) AS total_kasus_selesai
              FROM users u
              LEFT JOIN gamifikasi g ON g.user_id = u.id
              {$where}
@@ -472,6 +497,20 @@ class GuruController
         $riwayatSimulasi->execute([':id' => $id]);
         $simulasiList = $riwayatSimulasi->fetchAll();
 
+        // Riwayat tantangan studi kasus keamanan (Detektif Siber)
+        $riwayatKasus = [];
+        try {
+            $stmtKasus = $this->db->prepare(
+                "SELECT p.*, k.judul AS kasus_judul, k.kategori, k.platform, k.is_aman, k.xp_reward AS kasus_xp, k.pengirim
+                 FROM siswa_kasus_progress p
+                 JOIN kasus_keamanan k ON k.id = p.kasus_id
+                 WHERE p.user_id = :id
+                 ORDER BY p.completed_at DESC"
+            );
+            $stmtKasus->execute([':id' => $id]);
+            $riwayatKasus = $stmtKasus->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {}
+
         render('guru/siswa_detail', [
             'title'           => 'Detail Siswa: ' . $siswa['nama'],
             'siswa'           => $siswa,
@@ -479,6 +518,7 @@ class GuruController
             'riwayatKuis'     => $kuisList,
             'riwayatMateri'   => $materiList,
             'riwayatSimulasi' => $simulasiList,
+            'riwayatKasus'    => $riwayatKasus,
         ]);
     }
 
@@ -1890,5 +1930,183 @@ class GuruController
             }
         }
         jsonError('ID notifikasi tidak valid.', 400);
+    }
+
+    // =========================================================
+    // MANAJEMEN TANTANGAN STUDI KASUS KEAMANAN (ANTI-PHISHING)
+    // =========================================================
+
+    public function kasusKeamanan($id = null)
+    {
+        $guruId = (int)($_SESSION['user']['id'] ?? 1);
+
+        // Jika minta data JSON (misal untuk modal edit)
+        if ($id !== null && isset($_GET['format']) && $_GET['format'] === 'json') {
+            header('Content-Type: application/json; charset=utf-8');
+            $stmt = $this->db->prepare("SELECT * FROM kasus_keamanan WHERE id = ?");
+            $stmt->execute([(int)$id]);
+            $kasus = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($kasus) {
+                jsonSuccess($kasus);
+            } else {
+                jsonError('Kasus tidak ditemukan.', 404);
+            }
+            exit;
+        }
+
+        // Ambil daftar kasus beserta ringkasan progres siswa
+        $kasusList = $this->db->query(
+            "SELECT k.*, u.nama AS pembuat_nama,
+                    COUNT(p.id) AS total_dikerjakan,
+                    COALESCE(SUM(CASE WHEN p.is_correct = 1 THEN 1 ELSE 0 END), 0) AS total_benar
+             FROM kasus_keamanan k
+             LEFT JOIN users u ON u.id = k.guru_id
+             LEFT JOIN siswa_kasus_progress p ON p.kasus_id = k.id
+             GROUP BY k.id, u.nama
+             ORDER BY k.urutan ASC, k.id DESC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        // Ringkasan statistik
+        $totalKasus = count($kasusList);
+        $totalPengerjaan = (int)$this->db->query("SELECT COUNT(*) FROM siswa_kasus_progress")->fetchColumn();
+        $totalBenar = (int)$this->db->query("SELECT COUNT(*) FROM siswa_kasus_progress WHERE is_correct = 1")->fetchColumn();
+        $persenAkurasi = $totalPengerjaan > 0 ? round(($totalBenar / $totalPengerjaan) * 100, 1) : 0;
+
+        render('guru/kasus_keamanan', [
+            'title'           => 'Tantangan Studi Kasus Keamanan - Guru NetSim',
+            'kasusList'       => $kasusList,
+            'totalKasus'      => $totalKasus,
+            'totalPengerjaan' => $totalPengerjaan,
+            'persenAkurasi'   => $persenAkurasi,
+            'flash'           => ['success' => getFlash('success'), 'error' => getFlash('error')],
+        ]);
+    }
+
+    public function kasusKeamananCreate()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirect(base_url('guru/kasus-keamanan'));
+        }
+
+        if (!verifyToken($_POST['csrf_token'] ?? '')) {
+            setFlash('error', 'Token keamanan CSRF tidak valid.');
+            redirect(base_url('guru/kasus-keamanan'));
+        }
+
+        $guruId = (int)($_SESSION['user']['id'] ?? 1);
+        $judul = sanitize($_POST['judul'] ?? '');
+        $kategori = sanitize($_POST['kategori'] ?? 'Phishing');
+        $platform = sanitize($_POST['platform'] ?? 'whatsapp');
+        $pengirim = sanitize($_POST['pengirim'] ?? '');
+        $isiPesan = trim($_POST['isi_pesan'] ?? '');
+        $linkUrl = sanitize($_POST['link_url'] ?? '');
+        $tautanTerlihat = sanitize($_POST['tautan_terlihat'] ?? $linkUrl);
+        $tautanAsli = sanitize($_POST['tautan_asli'] ?? $linkUrl);
+        $lampiranNama = sanitize($_POST['lampiran_nama'] ?? '');
+        $isAman = isset($_POST['is_aman']) && (int)$_POST['is_aman'] === 1 ? 1 : 0;
+        $ciriBahaya = trim($_POST['ciri_bahaya'] ?? '');
+        $penjelasan = trim($_POST['penjelasan'] ?? '');
+        $xpReward = max(5, (int)($_POST['xp_reward'] ?? 25));
+        $isPublished = isset($_POST['is_published']) ? 1 : 0;
+        $urutan = (int)($_POST['urutan'] ?? 0);
+
+        if (empty($judul) || empty($pengirim) || empty($isiPesan) || empty($penjelasan)) {
+            setFlash('error', 'Semua bidang bertanda bintang (*) wajib diisi lengkap.');
+            redirect(base_url('guru/kasus-keamanan'));
+        }
+
+        try {
+            $stmt = $this->db->prepare(
+                "INSERT INTO kasus_keamanan (guru_id, judul, kategori, platform, pengirim, isi_pesan, link_url, tautan_terlihat, tautan_asli, lampiran_nama, is_aman, ciri_bahaya, penjelasan, xp_reward, is_published, urutan, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())"
+            );
+            $stmt->execute([
+                $guruId, $judul, $kategori, $platform, $pengirim, $isiPesan,
+                $linkUrl, $tautanTerlihat, $tautanAsli, $lampiranNama,
+                $isAman, $ciriBahaya, $penjelasan, $xpReward, $isPublished, $urutan
+            ]);
+
+            setFlash('success', 'Studi kasus keamanan baru "' . htmlspecialchars($judul) . '" berhasil ditambahkan!');
+        } catch (Throwable $e) {
+            setFlash('error', 'Gagal menambahkan kasus: ' . $e->getMessage());
+        }
+
+        redirect(base_url('guru/kasus-keamanan'));
+    }
+
+    public function kasusKeamananEdit($id = null)
+    {
+        $id = (int)$id;
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || $id <= 0) {
+            redirect(base_url('guru/kasus-keamanan'));
+        }
+
+        if (!verifyToken($_POST['csrf_token'] ?? '')) {
+            setFlash('error', 'Token keamanan CSRF tidak valid.');
+            redirect(base_url('guru/kasus-keamanan'));
+        }
+
+        $judul = sanitize($_POST['judul'] ?? '');
+        $kategori = sanitize($_POST['kategori'] ?? 'Phishing');
+        $platform = sanitize($_POST['platform'] ?? 'whatsapp');
+        $pengirim = sanitize($_POST['pengirim'] ?? '');
+        $isiPesan = trim($_POST['isi_pesan'] ?? '');
+        $linkUrl = sanitize($_POST['link_url'] ?? '');
+        $tautanTerlihat = sanitize($_POST['tautan_terlihat'] ?? $linkUrl);
+        $tautanAsli = sanitize($_POST['tautan_asli'] ?? $linkUrl);
+        $lampiranNama = sanitize($_POST['lampiran_nama'] ?? '');
+        $isAman = isset($_POST['is_aman']) && (int)$_POST['is_aman'] === 1 ? 1 : 0;
+        $ciriBahaya = trim($_POST['ciri_bahaya'] ?? '');
+        $penjelasan = trim($_POST['penjelasan'] ?? '');
+        $xpReward = max(5, (int)($_POST['xp_reward'] ?? 25));
+        $isPublished = isset($_POST['is_published']) ? 1 : 0;
+        $urutan = (int)($_POST['urutan'] ?? 0);
+
+        if (empty($judul) || empty($pengirim) || empty($isiPesan) || empty($penjelasan)) {
+            setFlash('error', 'Semua bidang bertanda bintang (*) wajib diisi lengkap.');
+            redirect(base_url('guru/kasus-keamanan'));
+        }
+
+        try {
+            $stmt = $this->db->prepare(
+                "UPDATE kasus_keamanan 
+                 SET judul = ?, kategori = ?, platform = ?, pengirim = ?, isi_pesan = ?,
+                     link_url = ?, tautan_terlihat = ?, tautan_asli = ?, lampiran_nama = ?,
+                     is_aman = ?, ciri_bahaya = ?, penjelasan = ?, xp_reward = ?,
+                     is_published = ?, urutan = ?, updated_at = NOW()
+                 WHERE id = ?"
+            );
+            $stmt->execute([
+                $judul, $kategori, $platform, $pengirim, $isiPesan,
+                $linkUrl, $tautanTerlihat, $tautanAsli, $lampiranNama,
+                $isAman, $ciriBahaya, $penjelasan, $xpReward,
+                $isPublished, $urutan, $id
+            ]);
+
+            setFlash('success', 'Studi kasus keamanan berhasil diperbarui!');
+        } catch (Throwable $e) {
+            setFlash('error', 'Gagal memperbarui kasus: ' . $e->getMessage());
+        }
+
+        redirect(base_url('guru/kasus-keamanan'));
+    }
+
+    public function kasusKeamananDelete($id = null)
+    {
+        $id = (int)$id;
+        if ($id <= 0) {
+            setFlash('error', 'ID kasus tidak valid.');
+            redirect(base_url('guru/kasus-keamanan'));
+        }
+
+        try {
+            $this->db->prepare("DELETE FROM siswa_kasus_progress WHERE kasus_id = ?")->execute([$id]);
+            $this->db->prepare("DELETE FROM kasus_keamanan WHERE id = ?")->execute([$id]);
+            setFlash('success', 'Studi kasus keamanan berhasil dihapus.');
+        } catch (Throwable $e) {
+            setFlash('error', 'Gagal menghapus kasus: ' . $e->getMessage());
+        }
+
+        redirect(base_url('guru/kasus-keamanan'));
     }
 }

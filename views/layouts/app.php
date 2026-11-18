@@ -46,6 +46,13 @@
         [x-cloak] { display: none !important; }
         .sidebar-transition { transition: width 0.25s ease; }
         .nav-link-active { background-color: #1e293b; color: #ffffff !important; }
+        /* Hilangkan background overlay pada popup SweetAlert2 */
+        .swal2-container.swal2-backdrop-show,
+        .swal2-container.swal2-noanimation {
+            background: transparent !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
     </style>
     <?= $extraHead ?? '' ?>
 </head>
@@ -116,14 +123,9 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- User Info -->
         <div class="px-3 py-3 border-b border-slate-800">
             <div class="flex items-center" :class="sidebarOpen ? 'space-x-3' : 'justify-center'">
-                <?php if (!empty($user['avatar'])): ?>
-                    <img src="<?= str_starts_with($user['avatar'], 'http') ? htmlspecialchars($user['avatar']) : base_url($user['avatar']) ?>" 
-                         alt="Avatar" class="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-slate-700">
-                <?php else: ?>
-                    <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
-                        <?= strtoupper(substr($user['nama'] ?? 'U', 0, 1)) ?>
-                    </div>
-                <?php endif; ?>
+                <img src="<?= htmlspecialchars(getAvatarUrl($user['avatar'] ?? '', $user['nama'] ?? 'Guru')) ?>" 
+                     alt="Avatar" class="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-slate-700"
+                     onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=<?= urlencode($user['nama'] ?? 'Guru') ?>&background=4f46e5&color=fff&bold=true';">
                 <div x-show="sidebarOpen" class="min-w-0">
                     <p class="text-white text-xs font-semibold truncate"><?= htmlspecialchars($user['nama'] ?? 'User') ?></p>
                     <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-300">
@@ -141,6 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
             $guruMenu = [
                 ['url' => base_url('guru/dashboard'), 'icon' => 'fa-gauge-high',      'label' => 'Dashboard',         'key' => 'dashboard'],
                 ['url' => base_url('guru/simulasi'),  'icon' => 'fa-diagram-project', 'label' => 'Simulasi Topologi', 'key' => 'simulasi'],
+                ['url' => base_url('guru/kasus-keamanan'), 'icon' => 'fa-shield-halved', 'label' => 'Tantangan Siber', 'key' => 'kasus-keamanan'],
                 ['url' => base_url('guru/siswa'),     'icon' => 'fa-users',           'label' => 'Data Siswa',        'key' => 'siswa'],
                 ['url' => base_url('guru/modul'),     'icon' => 'fa-book-open',       'label' => 'Modul',             'key' => 'modul'],
                 ['url' => base_url('guru/kuis'),      'icon' => 'fa-clipboard-list',  'label' => 'Bank Kuis',         'key' => 'kuis'],
@@ -165,6 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 ['url' => base_url('siswa/dashboard'),  'icon' => 'fa-gauge-high',   'label' => 'Dashboard',    'key' => 'dashboard'],
                 ['url' => base_url('siswa/materi'),     'icon' => 'fa-book-open',    'label' => 'Materi',       'key' => 'materi'],
                 ['url' => base_url('siswa/simulasi'),   'icon' => 'fa-diagram-project','label' => 'Simulasi',   'key' => 'simulasi'],
+                ['url' => base_url('siswa/kasus-keamanan'), 'icon' => 'fa-shield-halved', 'label' => 'Detektif Siber', 'key' => 'kasus-keamanan'],
                 ['url' => base_url('siswa/kuis'),       'icon' => 'fa-clipboard-list','label' => 'Kuis',        'key' => 'kuis'],
                 ['url' => base_url('siswa/nilai'),      'icon' => 'fa-star',         'label' => 'Nilai & XP',   'key' => 'nilai'],
                 ['url' => base_url('siswa/profil'),     'icon' => 'fa-user-circle',  'label' => 'Profil',       'key' => 'profil'],
@@ -355,14 +359,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="relative" x-data="{open:false}">
                         <button @click="open=!open"
                                 class="flex items-center space-x-2 p-1.5 rounded-xl hover:bg-slate-100 transition-colors">
-                            <?php if (!empty($user['avatar'])): ?>
-                                <img src="<?= str_starts_with($user['avatar'], 'http') ? htmlspecialchars($user['avatar']) : base_url($user['avatar']) ?>" 
-                                     alt="Avatar" class="w-8 h-8 rounded-xl object-cover shadow-sm border border-slate-200">
-                            <?php else: ?>
-                                <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-sm">
-                                    <?= strtoupper(substr($user['nama'] ?? 'U', 0, 1)) ?>
-                                </div>
-                            <?php endif; ?>
+                            <img src="<?= htmlspecialchars(getAvatarUrl($user['avatar'] ?? '', $user['nama'] ?? 'Guru')) ?>" 
+                                 alt="Avatar" class="w-8 h-8 rounded-xl object-cover shadow-sm border border-slate-200"
+                                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=<?= urlencode($user['nama'] ?? 'Guru') ?>&background=4f46e5&color=fff&bold=true';">
                             <div class="hidden md:block text-left">
                                 <p class="text-xs font-semibold text-slate-900 leading-tight"><?= htmlspecialchars($user['nama'] ?? '') ?></p>
                                 <p class="text-[11px] text-slate-400"><?= $isGuru ? 'Guru / Pengelola' : ucfirst($user['role'] ?? '') ?> • SMPN 1 Karangmoncol</p>

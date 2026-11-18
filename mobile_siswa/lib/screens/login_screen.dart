@@ -89,6 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      barrierColor: Colors.transparent,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) => Container(
@@ -269,6 +270,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Navigator.pop(ctx);
                                 showDialog(
                                   context: context,
+                                  barrierColor: Colors.transparent,
                                   builder: (dCtx) => AlertDialog(
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                     title: Row(
@@ -360,6 +362,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     showDialog(
       context: context,
+      barrierColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

@@ -160,6 +160,7 @@ class _KuisScreenState extends State<KuisScreen> {
 
     showDialog(
       context: context,
+      barrierColor: Colors.transparent,
       builder: (ctx) => AlertDialog(
         title: const Text('Kumpulkan Jawaban?', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
         content: Text(

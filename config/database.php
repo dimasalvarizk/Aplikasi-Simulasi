@@ -57,6 +57,9 @@ function getDB(): PDO {
     // Inisialisasi skema & seed data jika tabel belum ada
     initializeDatabaseIfNeeded($pdo, $isMySQL);
 
+    // Pastikan skema kasus keamanan & tabel tambahannya selalu siap (MySQL & SQLite)
+    ensureKasusKeamananSchema($pdo, $isMySQL);
+
     return $pdo;
 }
 
@@ -481,4 +484,167 @@ function seedInitialData(PDO $pdo): void {
     $stmtXp->execute([2, 15, 'materi', 1, 'Membaca materi: Pengantar Jaringan & Klasifikasi']);
     $stmtXp->execute([2, 15, 'materi', 2, 'Membaca materi: Komponen Perangkat Jaringan']);
     $stmtXp->execute([2, 50, 'kuis', 1, 'Menyelesaikan kuis: Kuis Evaluasi Dasar Jaringan Komputer (Skor 100)']);
+}
+
+function ensureKasusKeamananSchema(PDO $pdo, bool $isMySQL): void {
+    try {
+        $check = $pdo->query("SELECT 1 FROM kasus_keamanan LIMIT 1");
+        if ($check !== false) {
+            return;
+        }
+    } catch (Throwable $e) {
+        // Tabel belum ada, lanjut pembuatan
+    }
+
+    $autoInc = $isMySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT";
+
+    try {
+        // 1. Buat tabel kasus_keamanan
+        $pdo->exec("CREATE TABLE IF NOT EXISTS kasus_keamanan (
+            id INTEGER PRIMARY KEY $autoInc,
+            guru_id INTEGER NOT NULL DEFAULT 1,
+            judul VARCHAR(200) NOT NULL,
+            kategori VARCHAR(50) DEFAULT 'Phishing',
+            platform VARCHAR(50) DEFAULT 'whatsapp',
+            pengirim VARCHAR(100) NOT NULL,
+            isi_pesan TEXT NOT NULL,
+            link_url TEXT,
+            tautan_terlihat TEXT,
+            tautan_asli TEXT,
+            lampiran_nama VARCHAR(255) NULL,
+            is_aman INTEGER DEFAULT 0,
+            ciri_bahaya TEXT NULL,
+            penjelasan TEXT NOT NULL,
+            xp_reward INTEGER DEFAULT 25,
+            is_published INTEGER DEFAULT 1,
+            is_active INTEGER DEFAULT 1,
+            urutan INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )");
+
+        // 2. Buat tabel siswa_kasus_progress
+        $pdo->exec("CREATE TABLE IF NOT EXISTS siswa_kasus_progress (
+            id INTEGER PRIMARY KEY $autoInc,
+            user_id INTEGER NOT NULL,
+            kasus_id INTEGER NOT NULL,
+            jawaban_siswa INTEGER NOT NULL,
+            is_correct INTEGER NOT NULL,
+            xp_earned INTEGER DEFAULT 0,
+            attempt_count INTEGER DEFAULT 1,
+            completed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )");
+
+        // 3. Masukkan seed data 5 kasus awal jika kosong
+        $count = (int)$pdo->query("SELECT COUNT(*) FROM kasus_keamanan")->fetchColumn();
+        if ($count === 0) {
+            $cases = [
+                [
+                    1,
+                    'Pesan WhatsApp Undangan Pernikahan (.APK)',
+                    'Malware APK',
+                    'whatsapp',
+                    '+62 813-9821-4402 (Nomor Tak Dikenal)',
+                    'Halo kak, kami bermaksud mengundang kakak dan keluarga ke acara pernikahan kami besok Minggu. Mohon dibuka surat undangannya ya kak, ditunggu kehadirannya.',
+                    'Surat_Undangan_Pernikahan.apk (4.8 MB)',
+                    'Surat_Undangan_Pernikahan.apk (4.8 MB)',
+                    'Surat_Undangan_Pernikahan.apk (4.8 MB)',
+                    'Undangan_Pernikahan.apk',
+                    0,
+                    'Format file berupa aplikasi Android (.apk) bukan gambar/PDF. Mengirimkan file aplikasi dari orang asing sangat berisiko.',
+                    'BERBAHAYA! Surat undangan resmi tidak pernah berbentuk file aplikasi .apk. Jika file ini di-install, malware akan membaca SMS/OTP dan mengambil alih data ponsel Anda.',
+                    25,
+                    1
+                ],
+                [
+                    1,
+                    'SMS Hadiah Kuota Belajar 50 GB',
+                    'Phishing Kuota',
+                    'sms',
+                    'KEMDIKBUD-INFO (0857-1122-3344)',
+                    'Selamat! Nomor Anda terpilih mendapatkan Bantuan Kuota Internet Belajar 50GB Kemdikbud tahap 2. Segera aktifkan kuota Anda sebelum pukul 24.00 di tautan berikut.',
+                    'http://kuotabelajar-kemdikbud.free-claim.site/login',
+                    'http://kuotabelajar-kemdikbud.free-claim.site/login',
+                    'http://kuotabelajar-kemdikbud.free-claim.site/login',
+                    null,
+                    0,
+                    'Domain website palsu (.free-claim.site bukan .kemdikbud.go.id), tidak menggunakan HTTPS, dan menggunakan batas waktu darurat.',
+                    'BERBAHAYA! Kemdikbud hanya menyalurkan bantuan melalui sekolah secara langsung dan domain resminya selalu berakhiran .kemdikbud.go.id. Tautan ini adalah jebakan phishing.',
+                    25,
+                    2
+                ],
+                [
+                    1,
+                    'Pengumuman Jadwal Ulangan SMPN 1 Karangmoncol',
+                    'Link Resmi Sekolah',
+                    'whatsapp',
+                    'Bpk. Angzal Maolana, S.Pd (Wali Kelas VII A)',
+                    "Assalamu'alaikum wr. wb. Anak-anak sekalian, jadwal Penilaian Akhir Semester (PAS) Genap telah dirilis. Silakan unduh jadwal resmi dan tata tertib ujian di website resmi sekolah kita.",
+                    'https://smpn1karangmoncol.sch.id/agenda/jadwal-pas-genap',
+                    'https://smpn1karangmoncol.sch.id/agenda/jadwal-pas-genap',
+                    'https://smpn1karangmoncol.sch.id/agenda/jadwal-pas-genap',
+                    null,
+                    1,
+                    'Tautan aman, domain resmi sekolah berakhiran .sch.id dan menggunakan protokol terenkripsi https://.',
+                    'AMAN! Tautan ini resmi dari Guru Pengampu dan mengarah langsung ke domain sekolah berakhiran .sch.id yang terverifikasi dan aman untuk dibuka.',
+                    25,
+                    3
+                ],
+                [
+                    1,
+                    'Email Peringatan Akun Google Dibekukan',
+                    'Phishing Akun',
+                    'email',
+                    'Google Security Alert <support@g00gle-security-center.com>',
+                    'PERINGATAN: Kami mendeteksi aktivitas login mencurigakan pada akun Google Anda. Akun Anda akan dinonaktifkan dalam 24 jam kecuali Anda memverifikasi kata sandi sekarang.',
+                    'http://verify-myaccount-google.com/auth/login',
+                    'http://verify-myaccount-google.com/auth/login',
+                    'http://verify-myaccount-google.com/auth/login',
+                    null,
+                    0,
+                    'Alamat email pengirim palsu (menggunakan angka 0 g00gle bukan google.com), URL login palsu, dan menakut-nakuti pengguna.',
+                    'BERBAHAYA! Google tidak pernah mengirimkan email darurat dengan tautan login di luar domain resmi google.com. Trik ini sengaja dibuat agar Anda panik lalu memasukkan kata sandi.',
+                    25,
+                    4
+                ],
+                [
+                    1,
+                    'Tawaran Diamond & Skin Game Gratis',
+                    'Scam Game Online',
+                    'medsos',
+                    'Event MLBB Official (@diamond_gratis_mlbb)',
+                    'Spesial Ulang Tahun! Klaim 10.000 Diamond dan Skin Collector gratis hari ini. Cukup login dan masukkan ID serta kata sandi akun Moonton Anda di tautan event ini!',
+                    'http://event-claim-diamond-mlbb.xyz/spin',
+                    'http://event-claim-diamond-mlbb.xyz/spin',
+                    'http://event-claim-diamond-mlbb.xyz/spin',
+                    null,
+                    0,
+                    'Meminta password akun game, domain gratisan (.xyz), dan janji hadiah yang tidak masuk akal.',
+                    'BERBAHAYA! Developer game resmi tidak pernah meminta kata sandi pemain untuk membagikan hadiah. Website ini bertujuan membajak akun game Anda.',
+                    25,
+                    5
+                ],
+            ];
+
+            $stmt = $pdo->prepare(
+                "INSERT INTO kasus_keamanan 
+                 (guru_id, judul, kategori, platform, pengirim, isi_pesan, link_url, tautan_terlihat, tautan_asli, lampiran_nama, is_aman, ciri_bahaya, penjelasan, xp_reward, is_published, is_active, urutan)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, ?)"
+            );
+
+            foreach ($cases as $c) {
+                $stmt->execute($c);
+            }
+        }
+
+        // 4. Pastikan badge 'cyber_detective' ada
+        $cekBadge = $pdo->query("SELECT id FROM badges WHERE code = 'cyber_detective' LIMIT 1");
+        if ($cekBadge && !$cekBadge->fetch()) {
+            $pdo->prepare("INSERT INTO badges (code, nama, deskripsi, icon, xp_reward, kondisi_type, kondisi_nilai) VALUES (?, ?, ?, ?, ?, ?, ?)")
+                ->execute(['cyber_detective', 'Detektif Siber', 'Pecahkan tantangan analisis keamanan internet & anti-phishing!', '🕵️‍♂️', 50, 'xp_total', 10]);
+        }
+    } catch (Throwable $e) {
+        // Abaikan jika sudah ada
+    }
 }

@@ -220,6 +220,31 @@ function formatNumber(int|float $number, int $decimals = 0): string {
 }
 
 /**
+ * Resolusi URL Avatar Pengguna (Siswa/Guru) yang Tangguh & Bebas 404
+ */
+function getAvatarUrl(?string $avatar, string $fallbackName = ''): string {
+    if (!empty($avatar)) {
+        $avatar = trim($avatar);
+        if (str_starts_with($avatar, 'http://') || str_starts_with($avatar, 'https://')) {
+            return $avatar;
+        }
+        $cleanPath = ltrim($avatar, '/');
+        // Periksa keberadaan file fisik di disk
+        $root = dirname(__DIR__, 2);
+        if (file_exists($root . '/' . $cleanPath)) {
+            return base_url($cleanPath);
+        }
+    }
+
+    // Jika berupa nama pengguna, gunakan UI Avatars sebagai fallback visual bersih
+    if (!empty($fallbackName)) {
+        return 'https://ui-avatars.com/api/?name=' . urlencode($fallbackName) . '&background=4f46e5&color=fff&bold=true';
+    }
+
+    return base_url('public/img/avatars/avatar_1.png');
+}
+
+/**
  * Mengembalikan data URI base64 logo SMP Negeri 1 Karangmoncol agar selalu muncul 100% tanpa risiko 404 / path issue.
  */
 function getSchoolLogoSrc(): string {

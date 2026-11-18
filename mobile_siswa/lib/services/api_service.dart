@@ -358,4 +358,29 @@ class ApiService {
       return {'status': 'error', 'message': 'Gagal membaca berkas: $e'};
     }
   }
+
+  // 19. Ambil Daftar Tantangan Studi Kasus Keamanan Siber
+  static Future<List<dynamic>> getKasusKeamanan([int? userId]) async {
+    final query = (userId != null && userId > 0) ? '?user_id=$userId' : '';
+    final res = await get('/kasus-keamanan$query');
+    if (res['data'] is Map && res['data']['list'] is List) {
+      return List<dynamic>.from(res['data']['list']);
+    }
+    if (res['data'] is List) {
+      return List<dynamic>.from(res['data']);
+    }
+    return [];
+  }
+
+  // 20. Submit Keputusan Studi Kasus Keamanan
+  static Future<Map<String, dynamic>> submitKasusKeamanan(
+    int kasusId,
+    int userId,
+    int jawaban,
+  ) async {
+    return await post('/kasus-keamanan/$kasusId/submit', {
+      'user_id': userId,
+      'jawaban': jawaban,
+    });
+  }
 }

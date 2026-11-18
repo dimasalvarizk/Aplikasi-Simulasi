@@ -54,6 +54,8 @@ flowchart LR
         UC10["Pantau Papan Peringkat (Leaderboard)"]
         UC11["Pengajuan Pemulihan Akun Siswa"]
         UC12["Ganti Kata Sandi & Avatar di Profil"]
+        UC13["Kelola Skenario Kasus Keamanan Siber (Anti-Phishing)"]
+        UC14["Praktik Deteksi Phishing & Klaim Badge Detektif Siber"]
     end
 
     Guru --> UC1
@@ -62,6 +64,7 @@ flowchart LR
     Guru --> UC4
     Guru --> UC5
     Guru --> UC10
+    Guru --> UC13
 
     Siswa --> UC1
     Siswa --> UC6
@@ -71,6 +74,7 @@ flowchart LR
     Siswa --> UC10
     Siswa --> UC11
     Siswa --> UC12
+    Siswa --> UC14
 ```
 
 ### 2. Flowchart Alur Pembelajaran Siswa & Simulasi Topologi
@@ -144,6 +148,36 @@ flowchart TD
     ValidasiSandi -- "Ya" --> HashUpdate["Enkripsi Sandi Baru (BCrypt) & Simpan ke Database"]
     
     HashUpdate --> SelesaiAman(["Selesai: Akun Siswa Pulih & Aman Digunakan"])
+```
+
+### 3. Flowchart Praktik Detektif Siber (Tantangan Keamanan Internet & Anti-Phishing)
+
+```mermaid
+flowchart TD
+    Mulai(["Mulai"]) --> BukaTantangan["Siswa Buka Menu 'Detektif Siber 🕵️‍♂️' (Mobile / Web)"]
+    BukaTantangan --> PilihKasus["Pilih Skenario Pesan Masuk (WhatsApp, SMS, Email, Medsos)"]
+    PilihKasus --> BacaPesan["Baca Narasi Cerita & Amati Identitas Pengirim"]
+    
+    BacaPesan --> FiturInspeksi{"Gunakan Fitur Inspeksi Tautan?"}
+    FiturInspeksi -- "Ya" --> BukaInspeksi["Klik 'Inspeksi Tautan Asli': Lihat Protokol & Domain Asli"] --> AnalisisPesan
+    FiturInspeksi -- "Tidak" --> AnalisisPesan["Analisis Indikator Bahaya (Domain Palsu, File .APK, Tata Bahasa Mendesak)"]
+    
+    AnalisisPesan --> SiswaPilih{"Siswa Menentukan Keputusan"}
+    SiswaPilih -- "Pilih AMAN" --> KirimAman["Kirim Keputusan: AMAN (1)"]
+    SiswaPilih -- "Pilih BERBAHAYA" --> KirimBahaya["Kirim Keputusan: BERBAHAYA / PHISHING (0)"]
+    
+    KirimAman --> EvaluasiAPI["Backend API Validasi terhadap Kunci Kasus"]
+    KirimBahaya --> EvaluasiAPI
+    
+    EvaluasiAPI --> CekHasil{"Analisis Siswa Tepat?"}
+    CekHasil -- "Tepat Sekali" --> RewardBenar["Reward: Tambah XP (+25 XP) & Cek Lencana Detektif Siber"]
+    CekHasil -- "Kurang Tepat" --> FeedbackSalah["Tampilkan Peringatan & Ciri-Ciri Bahaya"]
+    
+    RewardBenar --> PopUpEdu["Munculkan Dialog Penjelasan Edukatif & Ciri-Ciri Bahaya"]
+    FeedbackSalah --> PopUpEdu
+    
+    PopUpEdu --> NotifGuru["Kirim Notifikasi Real-time ke Portal Guru"]
+    NotifGuru --> SelesaiKasus(["Selesai: Siswa Semakin Waspada & Melek Siber"])
 ```
 
 ---
@@ -342,6 +376,9 @@ git push -u origin main
 | `POST` | `/api/kuis/{id}/submit` | Pengiriman jawaban kuis dan perhitungan skor |
 | `GET`  | `/api/simulasi?user_id={id}` | Daftar tantangan simulasi topologi jaringan |
 | `POST` | `/api/simulasi/{id}/submit` | Validasi kanvas 2D topologi dan pemberian XP |
+| `GET`  | `/api/kasus-keamanan?user_id={id}` | Daftar tantangan studi kasus keamanan siber (WhatsApp, SMS, Email, Medsos) |
+| `GET`  | `/api/kasus-keamanan/{id}` | Detail skenario kasus keamanan siber tertentu |
+| `POST` | `/api/kasus-keamanan/{id}/submit` | Evaluasi keputusan siswa (Aman vs Berbahaya), reward XP, & badge |
 | `GET`  | `/api/profil?user_id={id}` | Mengambil data profil siswa, badges, riwayat XP, dan level |
 | `POST` | `/api/profil/avatar` | Pembaruan foto profil atau pemilihan karakter avatar |
 | `GET`  | `/api/leaderboard` | Papan peringkat ranking siswa kelas |
@@ -384,6 +421,7 @@ c:\xampp\htdocs\aplikasi-simulasi\
 │   │   │   ├── kuis_screen.dart      # Kuis Berwaktu & Soal Interaktif
 │   │   │   ├── simulasi_canvas_screen.dart # Kanvas 2D & Animasi Ping
 │   │   │   ├── simulasi_list_screen.dart   # Daftar Tantangan Topologi
+│   │   │   ├── studi_kasus_screen.dart     # Tantangan Detektif Siber & Anti-Phishing
 │   │   │   ├── leaderboard_screen.dart     # Podium & Peringkat Siswa
 │   │   │   ├── notifikasi_screen.dart      # Notifikasi Siswa
 │   │   │   └── profil_screen.dart          # Profil, Badges, Ganti Kata Sandi & Avatar

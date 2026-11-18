@@ -10,12 +10,12 @@
     <!-- Student Profile Header Card -->
     <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
         <div class="flex items-center gap-4">
-            <div class="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 text-slate-800 border border-slate-200 flex items-center justify-center text-2xl font-bold flex-shrink-0">
-                <?php if (!empty($siswa['avatar'])): ?>
-                    <img src="<?= str_starts_with($siswa['avatar'], 'http') ? htmlspecialchars($siswa['avatar']) : base_url($siswa['avatar']) ?>" alt="Avatar" class="w-full h-full object-cover">
-                <?php else: ?>
-                    <?= strtoupper(substr($siswa['nama'], 0, 1)) ?>
-                <?php endif; ?>
+            <div class="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 text-slate-800 border border-slate-200 flex items-center justify-center text-2xl font-bold flex-shrink-0 shadow-xs">
+                <?php $avatarUrl = getAvatarUrl($siswa['avatar'] ?? '', $siswa['nama']); ?>
+                <img src="<?= htmlspecialchars($avatarUrl) ?>" 
+                     alt="<?= htmlspecialchars($siswa['nama']) ?>" 
+                     class="w-full h-full object-cover"
+                     onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=<?= urlencode($siswa['nama']) ?>&background=4f46e5&color=fff&bold=true';">
             </div>
             <div>
                 <div class="flex items-center gap-2">
@@ -152,10 +152,110 @@
         </div>
     </div>
 
+    <!-- Riwayat Tantangan Detektif Siber (Kasus Keamanan) -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 pb-4 border-b border-slate-100">
+            <div>
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center text-xs">
+                        <i class="fas fa-shield-halved"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-900 text-sm">Progres Tantangan Detektif Siber (<?= count($riwayatKasus ?? []) ?>)</h3>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">Riwayat analisis kewaspadaan pesan masuk, link mencurigakan, dan pencegahan phishing oleh siswa</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <?php
+                $kasusSelesaiCount = 0;
+                $totalXpKasus = 0;
+                foreach ($riwayatKasus ?? [] as $rk) {
+                    if ((int)$rk['is_correct'] === 1) {
+                        $kasusSelesaiCount++;
+                        $totalXpKasus += (int)($rk['xp_earned'] ?? 0);
+                    }
+                }
+                ?>
+                <span class="px-2.5 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200/60 rounded-lg text-xs font-semibold">
+                    <?= $kasusSelesaiCount ?> Kasus Berhasil
+                </span>
+                <span class="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200/60 rounded-lg text-xs font-semibold">
+                    +<?= number_format($totalXpKasus) ?> XP
+                </span>
+            </div>
+        </div>
+
+        <?php if (empty($riwayatKasus)): ?>
+            <div class="text-center py-10 text-slate-400 text-xs">
+                <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2 text-sm">
+                    <i class="fas fa-user-secret"></i>
+                </div>
+                Siswa ini belum pernah mengerjakan tantangan Detektif Siber.
+            </div>
+        <?php else: ?>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-200 bg-slate-50/75 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
+                            <th class="py-3 px-4">Skenario Kasus</th>
+                            <th class="py-3 px-4 text-center">Platform</th>
+                            <th class="py-3 px-4 text-center">Jawaban Siswa</th>
+                            <th class="py-3 px-4 text-center">Status</th>
+                            <th class="py-3 px-4 text-center">XP Didapat</th>
+                            <th class="py-3 px-4 text-right">Waktu Selesai</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-xs text-slate-700">
+                        <?php foreach ($riwayatKasus as $rk): ?>
+                            <tr class="hover:bg-slate-50/50 transition">
+                                <td class="py-3 px-4">
+                                    <div class="font-semibold text-slate-900"><?= htmlspecialchars($rk['kasus_judul']) ?></div>
+                                    <div class="text-[11px] text-slate-400 mt-0.5">Pengirim: <?= htmlspecialchars($rk['pengirim'] ?? '-') ?> • Kategori: <?= htmlspecialchars($rk['kategori'] ?? 'Phishing') ?></div>
+                                </td>
+                                <td class="py-3 px-4 text-center">
+                                    <span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[11px] font-medium border border-slate-200 capitalize">
+                                        <?= htmlspecialchars($rk['platform']) ?>
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 text-center">
+                                    <?php if ((int)$rk['jawaban_siswa'] === 1): ?>
+                                        <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[11px] font-medium border border-emerald-200">Aman</span>
+                                    <?php else: ?>
+                                        <span class="px-2 py-0.5 bg-rose-50 text-rose-700 rounded text-[11px] font-medium border border-rose-200">Berbahaya</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="py-3 px-4 text-center">
+                                    <?php if ((int)$rk['is_correct'] === 1): ?>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-[11px] font-bold border border-emerald-200">
+                                            <i class="fas fa-check text-[9px]"></i> Tepat
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-rose-50 text-rose-700 rounded-full text-[11px] font-bold border border-rose-200">
+                                            <i class="fas fa-times text-[9px]"></i> Kurang Tepat
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="py-3 px-4 text-center font-mono font-bold">
+                                    <?php if ((int)($rk['xp_earned'] ?? 0) > 0): ?>
+                                        <span class="text-amber-600">+<?= (int)$rk['xp_earned'] ?> XP</span>
+                                    <?php else: ?>
+                                        <span class="text-slate-400">0 XP</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="py-3 px-4 text-right text-slate-400 text-[11px] whitespace-nowrap">
+                                    <?= formatDate($rk['completed_at'] ?? '', 'd M Y, H:i') ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    </div>
+
     <!-- Modal Reset Kata Sandi Siswa Detail -->
     <div x-show="openResetModal"
          x-cloak
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-transparent"
          x-transition:enter="transition ease-out duration-150"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"

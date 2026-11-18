@@ -8,6 +8,7 @@ import 'profil_screen.dart';
 import 'notifikasi_screen.dart';
 import 'simulasi_canvas_screen.dart';
 import 'simulasi_list_screen.dart';
+import 'studi_kasus_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -206,6 +207,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _buildBerandaTab(),
           _buildModulTab(),
           const SimulasiListScreen(),
+          const StudiKasusScreen(),
           _buildKuisTab(),
           const LeaderboardScreen(),
         ],
@@ -225,14 +227,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
           backgroundColor: Colors.white,
           selectedItemColor: const Color(0xFF0F172A),
           unselectedItemColor: const Color(0xFF94A3B8),
-          selectedFontSize: 11,
-          unselectedFontSize: 11,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+          selectedFontSize: 10,
+          unselectedFontSize: 10,
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
           elevation: 0,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Beranda'),
             BottomNavigationBarItem(icon: Icon(Icons.menu_book_outlined), activeIcon: Icon(Icons.menu_book), label: 'Modul'),
             BottomNavigationBarItem(icon: Icon(Icons.hub_outlined), activeIcon: Icon(Icons.hub), label: 'Simulasi'),
+            BottomNavigationBarItem(icon: Icon(Icons.security_outlined), activeIcon: Icon(Icons.security), label: 'Tantangan'),
             BottomNavigationBarItem(icon: Icon(Icons.assignment_outlined), activeIcon: Icon(Icons.assignment), label: 'Kuis'),
             BottomNavigationBarItem(icon: Icon(Icons.leaderboard_outlined), activeIcon: Icon(Icons.leaderboard), label: 'Peringkat'),
           ],
@@ -520,7 +524,105 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           const SizedBox(height: 18),
 
-          // 3. MENU AKSI CEPAT (4 Tombol Interaktif dengan Warna & Ikon)
+          // TANTANGAN DETEKTIF SIBER (FEATURED BANNER UTAMA)
+          GestureDetector(
+            onTap: () => setState(() => _selectedTabIndex = 3),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF312E81), Color(0xFF1E1B4B)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFF4F46E5), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF312E81).withOpacity(0.35),
+                    blurRadius: 14,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Colors.indigo.shade400.withOpacity(0.25),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.indigo.shade300.withOpacity(0.5)),
+                    ),
+                    child: const Center(
+                      child: Text('🕵️‍♂️', style: TextStyle(fontSize: 26)),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: const Color(0xFF34D399).withOpacity(0.5)),
+                              ),
+                              child: const Text(
+                                'TANTANGAN SIBER BARU',
+                                style: TextStyle(
+                                  color: Color(0xFF34D399),
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                            const Spacer(),
+                            const Text(
+                              'Buka ➔',
+                              style: TextStyle(
+                                color: Color(0xFF818CF8),
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        const Text(
+                          'Tantangan Detektif Siber',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Deteksi link phishing & malware WhatsApp/SMS (+XP & Badge)',
+                          style: TextStyle(
+                            color: Color(0xFFCBD5E1),
+                            fontSize: 11,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          // 3. MENU AKSI CEPAT (5 Tombol Interaktif dengan Warna & Ikon)
           const Text(
             'Aktivitas Pembelajaran',
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
@@ -542,11 +644,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(width: 10),
               Expanded(
                 child: _buildInteractiveActionTile(
-                  icon: Icons.quiz,
-                  title: 'Kuis Teori',
-                  subtitle: 'Uji Pemahaman',
-                  badge: '${_kuisList.length} Soal',
-                  gradientColors: const [Color(0xFF7C3AED), Color(0xFF6D28D9)],
+                  icon: Icons.security_rounded,
+                  title: 'Detektif Siber',
+                  subtitle: 'Kasus Phishing',
+                  badge: 'Tantangan',
+                  gradientColors: const [Color(0xFF4F46E5), Color(0xFF3730A3)],
                   onTap: () => setState(() => _selectedTabIndex = 3),
                 ),
               ),
@@ -557,6 +659,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               Expanded(
                 child: _buildInteractiveActionTile(
+                  icon: Icons.quiz,
+                  title: 'Kuis Teori',
+                  subtitle: 'Uji Pemahaman',
+                  badge: '${_kuisList.length} Soal',
+                  gradientColors: const [Color(0xFF7C3AED), Color(0xFF6D28D9)],
+                  onTap: () => setState(() => _selectedTabIndex = 4),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildInteractiveActionTile(
                   icon: Icons.menu_book_rounded,
                   title: 'Materi Modul',
                   subtitle: 'Baca Teori Jaringan',
@@ -565,21 +678,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   onTap: () => setState(() => _selectedTabIndex = 1),
                 ),
               ),
-              const SizedBox(width: 10),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
               Expanded(
                 child: _buildInteractiveActionTile(
                   icon: Icons.emoji_events,
-                  title: 'Peringkat',
-                  subtitle: 'Leaderboard Siswa',
+                  title: 'Peringkat Siswa',
+                  subtitle: 'Leaderboard Kelas',
                   badge: 'Juara',
                   gradientColors: const [Color(0xFFD97706), Color(0xFFB45309)],
-                  onTap: () => setState(() => _selectedTabIndex = 4),
+                  onTap: () => setState(() => _selectedTabIndex = 5),
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 22),
+          const SizedBox(height: 20),
 
           // 4. HERO BANNER SIMULASI KANVAS INTERAKTIF
           Builder(

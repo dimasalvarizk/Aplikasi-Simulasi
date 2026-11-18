@@ -877,6 +877,13 @@ class SiswaController
         if ($amount <= 0) return;
 
         $now = date('Y-m-d H:i:s');
+        $keterangan = 'Menyelesaikan ' . ucfirst($type) . ' (+' . $amount . ' XP)';
+        if ($type === 'kasus_keamanan') {
+            try {
+                $kasusJudul = $this->db->query("SELECT judul FROM kasus_keamanan WHERE id = {$refId}")->fetchColumn();
+                $keterangan = $kasusJudul ? 'Detektif Siber: ' . $kasusJudul . ' (+' . $amount . ' XP)' : 'Tantangan Detektif Siber (+' . $amount . ' XP)';
+            } catch (Throwable $e) {}
+        }
 
         // Catat ke xp_log
         $this->db->prepare(
@@ -887,7 +894,7 @@ class SiswaController
             ':amount' => $amount,
             ':type'   => $type,
             ':ref'    => $refId,
-            ':ket'    => 'Menyelesaikan ' . ucfirst($type) . ' (+' . $amount . ' XP)',
+            ':ket'    => $keterangan,
             ':now'    => $now,
         ]);
 
@@ -940,6 +947,17 @@ class SiswaController
         $badgesLvl = $this->db->query("SELECT id FROM badges WHERE kondisi_type = 'level' AND kondisi_nilai <= {$level}")->fetchAll(PDO::FETCH_COLUMN);
 
         $eligible = array_unique(array_merge($badgesXp, $badgesLvl));
+
+        // Badge Detektif Siber (jika berhasil memecahkan minimal 1 kasus keamanan)
+        try {
+            $kasusBenar = (int)$this->db->query("SELECT COUNT(*) FROM siswa_kasus_progress WHERE user_id = {$userId} AND is_correct = 1")->fetchColumn();
+            if ($kasusBenar >= 1) {
+                $bId = $this->db->query("SELECT id FROM badges WHERE code = 'cyber_detective' LIMIT 1")->fetchColumn();
+                if ($bId) {
+                    $eligible[] = (int)$bId;
+                }
+            }
+        } catch (Throwable $e) {}
 
         foreach ($eligible as $badgeId) {
             $cek = $this->db->prepare("SELECT id FROM user_badges WHERE user_id = ? AND badge_id = ?");
@@ -1462,5 +1480,183 @@ class SiswaController
             }
         }
         jsonError('ID notifikasi tidak valid.', 400);
+    }
+
+    // =========================================================
+    // TANTANGAN STUDI KASUS KEAMANAN (ANTI-PHISHING) SISWA
+    // =========================================================
+
+    public function kasusKeamanan($id = null)
+    {
+        $userId = (int)($_SESSION['user']['id'] ?? (getUser()['id'] ?? 0));
+
+        // Ambil semua tantangan kasus yang dipublikasikan
+        $kasusList = $this->db->query(
+            "SELECT k.*, u.nama AS pembuat_nama
+             FROM kasus_keamanan k
+             LEFT JOIN users u ON u.id = k.guru_id
+             WHERE k.is_published = 1
+             ORDER BY k.urutan ASC, k.id ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        // Ambil progress user
+        $progressMap = [];
+        if ($userId > 0) {
+            $stmt = $this->db->prepare("SELECT * FROM siswa_kasus_progress WHERE user_id = ?");
+            $stmt->execute([$userId]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $p) {
+                $progressMap[(int)$p['kasus_id']] = $p;
+            }
+        }
+
+        $totalSelesai = 0;
+        $totalXpDidapat = 0;
+
+        foreach ($kasusList as &$k) {
+            $cid = (int)$k['id'];
+            if (isset($progressMap[$cid])) {
+                $p = $progressMap[$cid];
+                $k['progress'] = $p;
+                $k['sudah_dikerjakan'] = true;
+                $k['is_correct'] = ((int)$p['is_correct'] === 1);
+                $k['jawaban_siswa'] = (int)$p['jawaban_siswa'];
+                $k['xp_earned'] = (int)$p['xp_earned'];
+                if ($k['is_correct']) {
+                    $totalSelesai++;
+                }
+                $totalXpDidapat += $k['xp_earned'];
+            } else {
+                $k['progress'] = null;
+                $k['sudah_dikerjakan'] = false;
+                $k['is_correct'] = null;
+                $k['jawaban_siswa'] = null;
+                $k['xp_earned'] = 0;
+            }
+        }
+        unset($k);
+
+        // Cek apakah siswa sudah memiliki badge 'cyber_detective'
+        $hasBadge = false;
+        if ($userId > 0) {
+            $bStmt = $this->db->prepare("SELECT ub.id FROM user_badges ub JOIN badges b ON b.id = ub.badge_id WHERE ub.user_id = ? AND b.code = 'cyber_detective'");
+            $bStmt->execute([$userId]);
+            $hasBadge = (bool)$bStmt->fetch();
+        }
+
+        render('siswa/kasus_keamanan', [
+            'title'          => 'Detektif Siber - NetSim Academy',
+            'kasusList'      => $kasusList,
+            'totalKasus'     => count($kasusList),
+            'totalSelesai'   => $totalSelesai,
+            'totalXpDidapat' => $totalXpDidapat,
+            'hasBadge'       => $hasBadge,
+            'flash'          => ['success' => getFlash('success'), 'error' => getFlash('error')],
+        ]);
+    }
+
+    public function kasusKeamananSubmit($id = null)
+    {
+        $id = (int)$id;
+        if ($id <= 0) {
+            redirect(base_url('siswa/kasus-keamanan'));
+        }
+
+        $userId = (int)($_SESSION['user']['id'] ?? (getUser()['id'] ?? 0));
+        $jawabanRaw = $_POST['jawaban'] ?? null;
+
+        if ($jawabanRaw === null || !in_array((string)$jawabanRaw, ['0', '1', 0, 1], true)) {
+            setFlash('error', 'Silakan pilih keputusan: AMAN atau BERBAHAYA.');
+            redirect(base_url('siswa/kasus-keamanan'));
+        }
+
+        $jawabanSiswa = (int)$jawabanRaw;
+
+        try {
+            $stmt = $this->db->prepare("SELECT * FROM kasus_keamanan WHERE id = ? AND is_published = 1 LIMIT 1");
+            $stmt->execute([$id]);
+            $kasus = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$kasus) {
+                setFlash('error', 'Tantangan kasus keamanan tidak ditemukan.');
+                redirect(base_url('siswa/kasus-keamanan'));
+            }
+
+            $kunciAman = (int)$kasus['is_aman'];
+            $isCorrect = ($jawabanSiswa === $kunciAman);
+            $xpReward = 0;
+            $now = date('Y-m-d H:i:s');
+
+            // Cek progress sebelumnya
+            $pStmt = $this->db->prepare("SELECT * FROM siswa_kasus_progress WHERE user_id = ? AND kasus_id = ?");
+            $pStmt->execute([$userId, $id]);
+            $prev = $pStmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($prev) {
+                $prevCorrect = ((int)$prev['is_correct'] === 1);
+                if (!$prevCorrect && $isCorrect) {
+                    $xpReward = (int)($kasus['xp_reward'] ?? 20);
+                }
+                $uStmt = $this->db->prepare(
+                    "UPDATE siswa_kasus_progress 
+                     SET jawaban_siswa = ?, is_correct = ?, xp_earned = xp_earned + ?, attempt_count = attempt_count + 1, completed_at = ?
+                     WHERE id = ?"
+                );
+                $uStmt->execute([$jawabanSiswa, $isCorrect ? 1 : 0, $xpReward, $now, (int)$prev['id']]);
+            } else {
+                if ($isCorrect) {
+                    $xpReward = (int)($kasus['xp_reward'] ?? 20);
+                }
+                $iStmt = $this->db->prepare(
+                    "INSERT INTO siswa_kasus_progress (user_id, kasus_id, jawaban_siswa, is_correct, xp_earned, attempt_count, completed_at)
+                     VALUES (?, ?, ?, ?, ?, 1, ?)"
+                );
+                $iStmt->execute([$userId, $id, $jawabanSiswa, $isCorrect ? 1 : 0, $xpReward, $now]);
+            }
+
+            if ($xpReward > 0) {
+                $this->_addXP($userId, $xpReward, 'kasus_keamanan', $id);
+            }
+
+            // Cek unlock badge cyber_detective
+            if ($isCorrect) {
+                $bStmt = $this->db->query("SELECT * FROM badges WHERE code = 'cyber_detective' LIMIT 1");
+                $badge = $bStmt ? $bStmt->fetch(PDO::FETCH_ASSOC) : null;
+                if ($badge) {
+                    $ubStmt = $this->db->prepare("SELECT id FROM user_badges WHERE user_id = ? AND badge_id = ?");
+                    $ubStmt->execute([$userId, (int)$badge['id']]);
+                    if (!$ubStmt->fetch()) {
+                        $this->db->prepare("INSERT INTO user_badges (user_id, badge_id, earned_at) VALUES (?, ?, ?)")
+                                 ->execute([$userId, (int)$badge['id'], $now]);
+                        if ((int)$badge['xp_reward'] > 0) {
+                            $this->_addXP($userId, (int)$badge['xp_reward'], 'badge', (int)$badge['id']);
+                        }
+                    }
+                }
+            }
+
+            // Jika AJAX request
+            if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                header('Content-Type: application/json; charset=utf-8');
+                jsonSuccess([
+                    'is_correct'    => $isCorrect,
+                    'jawaban_siswa' => $jawabanSiswa,
+                    'kunci_jawaban' => $kunciAman,
+                    'xp_earned'     => $xpReward,
+                    'ciri_bahaya'   => $kasus['ciri_bahaya'],
+                    'penjelasan'    => $kasus['penjelasan'],
+                ], $isCorrect ? 'Analisis Tepat! Anda mendapatkan reward XP.' : 'Analisis Kurang Tepat. Pelajari penjelasan edukasinya.');
+                exit;
+            }
+
+            if ($isCorrect) {
+                setFlash('success', 'Analisis TEPAT SEKALI! ' . ($xpReward > 0 ? "Kamu meraih +{$xpReward} XP!" : "Kamu telah berhasil menganalisis kasus ini."));
+            } else {
+                setFlash('error', 'Analisis kurang tepat. Waspadai tanda-tanda ancaman pada pesan tersebut!');
+            }
+        } catch (Throwable $e) {
+            setFlash('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+
+        redirect(base_url('siswa/kasus-keamanan'));
     }
 }

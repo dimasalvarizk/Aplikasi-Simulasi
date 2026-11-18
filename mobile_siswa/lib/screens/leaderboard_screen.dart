@@ -293,9 +293,35 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                         ],
                                       ),
                                       const SizedBox(height: 2),
-                                      Text(
-                                        'Kelas ${item['kelas'] ?? 'VII'} • Level ${item['level'] ?? 1}',
-                                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            'Kelas ${item['kelas'] ?? 'VII'} • Level ${item['level'] ?? 1}',
+                                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                          ),
+                                          if ((int.tryParse(item['kasus_selesai']?.toString() ?? '0') ?? 0) > 0) ...[
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFEEF2FF),
+                                                borderRadius: BorderRadius.circular(4),
+                                                border: Border.all(color: const Color(0xFFC7D2FE)),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Icon(Icons.shield_outlined, size: 9, color: Color(0xFF4F46E5)),
+                                                  const SizedBox(width: 2.5),
+                                                  Text(
+                                                    '${item['kasus_selesai']} Siber',
+                                                    style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF4F46E5)),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ],
                                       ),
                                     ],
                                   ),

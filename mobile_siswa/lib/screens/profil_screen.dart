@@ -54,6 +54,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
   void _confirmLogout() {
     showDialog(
       context: context,
+      barrierColor: Colors.transparent,
       builder: (ctx) => AlertDialog(
         title: const Text('Keluar dari Akun', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
         content: const Text(
@@ -222,6 +223,7 @@ if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      barrierColor: Colors.transparent,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) {
@@ -655,6 +657,7 @@ if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      barrierColor: Colors.transparent,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) => Container(

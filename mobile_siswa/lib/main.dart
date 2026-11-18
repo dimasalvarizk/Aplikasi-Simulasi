@@ -93,6 +93,19 @@ class SimulasiTopologiApp extends StatelessWidget {
           thickness: 1,
           space: 1,
         ),
+        dialogTheme: DialogTheme(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          elevation: 6,
+          shadowColor: Colors.black.withOpacity(0.08),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        ),
+        bottomSheetTheme: const BottomSheetThemeData(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          elevation: 6,
+          modalBarrierColor: Colors.transparent, // Hilangkan background overlay pada bottom sheet (transparan total)
+        ),
       ),
       builder: (context, child) {
         final screenWidth = MediaQuery.of(context).size.width;

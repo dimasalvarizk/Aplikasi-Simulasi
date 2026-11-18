@@ -272,11 +272,53 @@ CREATE TABLE IF NOT EXISTS xp_log (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     xp_amount INT NOT NULL,
-    sumber ENUM('materi', 'kuis', 'simulasi', 'badge', 'login_streak') NOT NULL,
+    sumber ENUM('materi', 'kuis', 'simulasi', 'badge', 'login_streak', 'kasus_keamanan') NOT NULL,
     referensi_id INT NULL,
     keterangan VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- -----------------------------------------------------------
+-- Tabel Tantangan Studi Kasus Keamanan Siber
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS kasus_keamanan (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    guru_id INT NOT NULL,
+    judul VARCHAR(200) NOT NULL,
+    kategori VARCHAR(50) DEFAULT 'phishing',
+    platform VARCHAR(50) DEFAULT 'whatsapp',
+    pengirim VARCHAR(100) NOT NULL,
+    isi_pesan TEXT NOT NULL,
+    lampiran_nama VARCHAR(255) NULL,
+    tautan_terlihat VARCHAR(255) NULL,
+    tautan_asli VARCHAR(500) NULL,
+    is_aman TINYINT(1) DEFAULT 0,
+    ciri_bahaya TEXT NULL,
+    penjelasan TEXT NOT NULL,
+    xp_reward INT DEFAULT 20,
+    is_published TINYINT(1) DEFAULT 1,
+    urutan INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (guru_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- -----------------------------------------------------------
+-- Tabel Progres Kasus Keamanan Siswa
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS siswa_kasus_progress (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    kasus_id INT NOT NULL,
+    jawaban_siswa TINYINT(1) NOT NULL,
+    is_correct TINYINT(1) NOT NULL,
+    xp_earned INT DEFAULT 0,
+    attempt_count INT DEFAULT 1,
+    completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_siswa_kasus (user_id, kasus_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (kasus_id) REFERENCES kasus_keamanan(id) ON DELETE CASCADE
 );
 
 -- -----------------------------------------------------------

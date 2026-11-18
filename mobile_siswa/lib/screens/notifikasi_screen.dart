@@ -78,6 +78,8 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
     // Tampilkan modal detail pesan
     showModalBottomSheet(
       context: context,
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),

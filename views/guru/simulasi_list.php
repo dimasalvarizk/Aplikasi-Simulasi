@@ -164,7 +164,7 @@
     <!-- MODAL 1: TAMBAH SOAL SIMULASI BARU                        -->
     <!-- ========================================================= -->
     <div x-show="showCreateModal" x-cloak
-         class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+         class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-transparent">
         <div @click.away="showCreateModal = false"
              class="bg-white rounded-2xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-5 text-left relative max-h-[90vh] overflow-y-auto">
             
@@ -305,7 +305,7 @@
     <!-- MODAL 2: EDIT SOAL SIMULASI                               -->
     <!-- ========================================================= -->
     <div x-show="showEditModal" x-cloak
-         class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+         class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-transparent">
         <div @click.away="showEditModal = false"
              class="bg-white rounded-2xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-5 text-left relative max-h-[90vh] overflow-y-auto">
             

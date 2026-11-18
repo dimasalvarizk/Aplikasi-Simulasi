@@ -1,16 +1,10 @@
 <?php
-// ─── Bootstrap ────────────────────────────────────────────────────────────────
+// ─── Bootstrap Dasar ──────────────────────────────────────────────────────────
 require_once __DIR__ . '/config/app.php';
-require_once __DIR__ . '/config/database.php';
-require_once __DIR__ . '/app/helpers/session.php';
-require_once __DIR__ . '/app/helpers/functions.php';
-require_once __DIR__ . '/app/helpers/response.php';
 
-startSession();
-
-// ─── URL Routing ─────────────────────────────────────────────────────────────
-$requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$scriptDir  = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+// ─── URL Routing Awal & Static File Direct Server ──────────────────────────────
+$requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+$scriptDir  = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
 
 if ($scriptDir !== '/' && $scriptDir !== '\\' && !empty($scriptDir)) {
     if (str_starts_with($requestUri, $scriptDir)) {
@@ -23,6 +17,37 @@ if ($scriptDir !== '/' && $scriptDir !== '\\' && !empty($scriptDir)) {
 }
 $route = trim($route, '/');
 
+// Static file fallback untuk folder public (misal foto avatar, logo, css, js)
+if (str_starts_with($route, 'public/')) {
+    $filePath = __DIR__ . '/' . $route;
+    if (is_file($filePath)) {
+        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        $mime = match($ext) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png'         => 'image/png',
+            'webp'        => 'image/webp',
+            'gif'         => 'image/gif',
+            'svg'         => 'image/svg+xml',
+            'css'         => 'text/css',
+            'js'          => 'application/javascript',
+            default       => 'application/octet-stream',
+        };
+        header('Content-Type: ' . $mime);
+        header('Cache-Control: public, max-age=86400');
+        header('Content-Length: ' . filesize($filePath));
+        readfile($filePath);
+        exit;
+    }
+}
+
+// ─── Bootstrap Lanjutan (Database, Session, Helpers) ───────────────────────────
+require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/app/helpers/session.php';
+require_once __DIR__ . '/app/helpers/functions.php';
+require_once __DIR__ . '/app/helpers/response.php';
+
+startSession();
+
 // Jika root, redirect sesuai status autentikasi
 if (empty($route) || $route === 'index.php') {
     if (isLoggedIn()) {
@@ -30,27 +55,6 @@ if (empty($route) || $route === 'index.php') {
         redirect(base_url(($user['role'] ?? '') === 'guru' ? 'guru/dashboard' : 'siswa/dashboard'));
     } else {
         redirect(base_url('login'));
-    }
-}
-
-// Static file fallback untuk folder public (misal logo, css, js)
-if (str_starts_with($route, 'public/')) {
-    $filePath = __DIR__ . '/' . $route;
-    if (is_file($filePath)) {
-        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-        $mime = match($ext) {
-            'jpg', 'jpeg' => 'image/jpeg',
-            'png' => 'image/png',
-            'gif' => 'image/gif',
-            'svg' => 'image/svg+xml',
-            'css' => 'text/css',
-            'js'  => 'application/javascript',
-            default => 'application/octet-stream',
-        };
-        header('Content-Type: ' . $mime);
-        header('Content-Length: ' . filesize($filePath));
-        readfile($filePath);
-        exit;
     }
 }
 
@@ -185,6 +189,18 @@ if ($segment0 === 'guru') {
     } elseif ($action === 'simulasi') {
         $ctrl->simulasi($param1);
         exit;
+    } elseif (($action === 'kasus-keamanan' || $action === 'kasus_keamanan' || $action === 'kasus') && $param1 === 'create') {
+        $ctrl->kasusKeamananCreate();
+        exit;
+    } elseif (($action === 'kasus-keamanan' || $action === 'kasus_keamanan' || $action === 'kasus') && $param1 === 'edit') {
+        $ctrl->kasusKeamananEdit($param2);
+        exit;
+    } elseif (($action === 'kasus-keamanan' || $action === 'kasus_keamanan' || $action === 'kasus') && $param1 === 'delete') {
+        $ctrl->kasusKeamananDelete($param2);
+        exit;
+    } elseif ($action === 'kasus-keamanan' || $action === 'kasus_keamanan' || $action === 'kasus') {
+        $ctrl->kasusKeamanan($param1);
+        exit;
     } elseif ($action === 'profil') {
         $ctrl->profil();
         exit;
@@ -216,6 +232,12 @@ if ($segment0 === 'siswa') {
         $action = 'uploadFoto';
     } elseif ($action === 'update-password' || $action === 'ganti-password' || ($action === 'profil' && ($param1 === 'update-password' || $param1 === 'ganti-password'))) {
         $ctrl->updatePassword();
+        exit;
+    } elseif (($action === 'kasus-keamanan' || $action === 'kasus' || $action === 'tantangan-siber') && $param1 === 'submit') {
+        $ctrl->kasusKeamananSubmit($segment3 ?: null);
+        exit;
+    } elseif ($action === 'kasus-keamanan' || $action === 'kasus' || $action === 'tantangan-siber') {
+        $ctrl->kasusKeamanan($param1);
         exit;
     }
 
@@ -292,6 +314,15 @@ if ($segment0 === 'api') {
     } elseif ($action === 'notifikasi') {
         $ctrl->getNotifikasi();
         exit;
+    } elseif (($action === 'kasus-keamanan' || $action === 'kasus') && $param2 === 'submit') {
+        $ctrl->submitKasusKeamanan($param1);
+        exit;
+    } elseif (($action === 'kasus-keamanan' || $action === 'kasus') && $param1 !== null) {
+        $ctrl->getKasusKeamananDetail($param1);
+        exit;
+    } elseif ($action === 'kasus-keamanan' || $action === 'kasus') {
+        $ctrl->getKasusKeamanan();
+        exit;
     }
 
     if (method_exists($ctrl, $action)) {
@@ -304,7 +335,7 @@ if ($segment0 === 'api') {
 }
 
 // 5. Short route aliases
-if (in_array($segment0, ['materi', 'kuis', 'simulasi'])) {
+if (in_array($segment0, ['materi', 'kuis', 'simulasi', 'kasus-keamanan', 'tantangan-siber'])) {
     if (isLoggedIn()) {
         redirect(base_url('siswa/' . $route));
     } else {

@@ -259,6 +259,7 @@ class _SimulasiCanvasScreenState extends State<SimulasiCanvasScreen> with Single
   void _clearCanvas() {
     showDialog(
       context: context,
+      barrierColor: Colors.transparent,
       builder: (ctx) => AlertDialog(
         title: const Text('Bersihkan Kanvas?', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
         content: const Text('Semua perangkat dan kabel yang sudah Anda susun akan dihapus dari kanvas.', style: TextStyle(fontSize: 13)),
@@ -296,7 +297,8 @@ class _SimulasiCanvasScreenState extends State<SimulasiCanvasScreen> with Single
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0F172A),
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
@@ -309,9 +311,9 @@ class _SimulasiCanvasScreenState extends State<SimulasiCanvasScreen> with Single
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: dev.tagColor.withOpacity(0.2),
+                    color: dev.tagColor.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: dev.tagColor.withOpacity(0.5)),
+                    border: Border.all(color: dev.tagColor.withOpacity(0.3)),
                   ),
                   child: Icon(dev.iconData, color: dev.tagColor, size: 28),
                 ),
@@ -320,12 +322,12 @@ class _SimulasiCanvasScreenState extends State<SimulasiCanvasScreen> with Single
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(dev.name, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text(dev.name, style: const TextStyle(color: Color(0xFF0F172A), fontSize: 16, fontWeight: FontWeight.bold)),
                       Text('${dev.label} • ${dev.type.toUpperCase()}', style: TextStyle(color: dev.tagColor, fontSize: 11, fontWeight: FontWeight.w700)),
                     ],
                   ),
                 ),
-                IconButton(icon: const Icon(Icons.close, color: Color(0xFF94A3B8)), onPressed: () => Navigator.pop(ctx)),
+                IconButton(icon: const Icon(Icons.close, color: Color(0xFF64748B)), onPressed: () => Navigator.pop(ctx)),
               ],
             ),
             const SizedBox(height: 16),
@@ -365,8 +367,8 @@ class _SimulasiCanvasScreenState extends State<SimulasiCanvasScreen> with Single
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
-          Text(value, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'monospace')),
+          Text(label, style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+          Text(value, style: const TextStyle(color: Color(0xFF0F172A), fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'monospace')),
         ],
       ),
     );
@@ -424,7 +426,8 @@ class _SimulasiCanvasScreenState extends State<SimulasiCanvasScreen> with Single
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0F172A),
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
@@ -439,16 +442,16 @@ class _SimulasiCanvasScreenState extends State<SimulasiCanvasScreen> with Single
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.network_ping, color: Color(0xFF38BDF8), size: 24),
+                    const Icon(Icons.network_ping, color: Color(0xFF2563EB), size: 24),
                     const SizedBox(width: 10),
                     const Expanded(
                       child: Text(
                         'Uji Konektivitas Ping (ICMP)',
-                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: Color(0xFF0F172A), fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF94A3B8)),
+                      icon: const Icon(Icons.close, color: Color(0xFF64748B)),
                       onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
@@ -456,29 +459,29 @@ class _SimulasiCanvasScreenState extends State<SimulasiCanvasScreen> with Single
                 const SizedBox(height: 6),
                 const Text(
                   'Pilih komputer pengirim dan komputer tujuan untuk menguji transmisi paket ICMP Echo.',
-                  style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                  style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
                 ),
                 const SizedBox(height: 18),
 
                 // Source Selector
-                const Text('1. Komputer Pengirim (Source):', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.w700)),
+                const Text('1. Komputer Pengirim (Source):', style: TextStyle(color: Color(0xFF2563EB), fontSize: 12, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
+                    color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFF334155)),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: sourceId,
                       isExpanded: true,
-                      dropdownColor: const Color(0xFF1E293B),
+                      dropdownColor: Colors.white,
                       items: hosts.map((d) {
                         return DropdownMenuItem<String>(
                           value: d.id,
-                          child: Text('${d.name} (${d.ipAddress})', style: const TextStyle(color: Colors.white, fontSize: 13)),
+                          child: Text('${d.name} (${d.ipAddress})', style: const TextStyle(color: Color(0xFF0F172A), fontSize: 13)),
                         );
                       }).toList(),
                       onChanged: (val) {
@@ -497,24 +500,24 @@ class _SimulasiCanvasScreenState extends State<SimulasiCanvasScreen> with Single
                 const SizedBox(height: 14),
 
                 // Target Selector
-                const Text('2. Komputer Tujuan (Target IP):', style: TextStyle(color: Color(0xFF34D399), fontSize: 12, fontWeight: FontWeight.w700)),
+                const Text('2. Komputer Tujuan (Target IP):', style: TextStyle(color: Color(0xFF059669), fontSize: 12, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
+                    color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFF334155)),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: targetId,
                       isExpanded: true,
-                      dropdownColor: const Color(0xFF1E293B),
+                      dropdownColor: Colors.white,
                       items: hosts.where((h) => h.id != sourceId).map((d) {
                         return DropdownMenuItem<String>(
                           value: d.id,
-                          child: Text('${d.name} (${d.ipAddress})', style: const TextStyle(color: Colors.white, fontSize: 13)),
+                          child: Text('${d.name} (${d.ipAddress})', style: const TextStyle(color: Color(0xFF0F172A), fontSize: 13)),
                         );
                       }).toList(),
                       onChanged: (val) {
@@ -641,17 +644,18 @@ class _SimulasiCanvasScreenState extends State<SimulasiCanvasScreen> with Single
   }) {
     showDialog(
       context: context,
+      barrierColor: Colors.transparent,
       builder: (ctx) => Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF0C0C0C),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFF334155), width: 1.5),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.85),
+                color: Colors.black.withOpacity(0.08),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -661,24 +665,25 @@ class _SimulasiCanvasScreenState extends State<SimulasiCanvasScreen> with Single
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Windows Command Prompt Title Bar
+              // Title Bar
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: const BoxDecoration(
-                  color: Color(0xFF1E293B),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                  color: Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+                  border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.terminal, size: 16, color: Color(0xFF38BDF8)),
+                    const Icon(Icons.terminal, size: 16, color: Color(0xFF2563EB)),
                     const SizedBox(width: 8),
                     const Expanded(
                       child: Text(
                         'Administrator: Command Prompt (Ping Test)',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Color(0xFF0F172A),
                           fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                           fontFamily: 'monospace',
                         ),
                         maxLines: 1,
@@ -690,10 +695,10 @@ class _SimulasiCanvasScreenState extends State<SimulasiCanvasScreen> with Single
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEF4444).withOpacity(0.8),
+                          color: const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Icon(Icons.close, size: 12, color: Colors.white),
+                        child: const Icon(Icons.close, size: 14, color: Color(0xFF64748B)),
                       ),
                     ),
                   ],
@@ -808,17 +813,19 @@ class _SimulasiCanvasScreenState extends State<SimulasiCanvasScreen> with Single
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: const BoxDecoration(
-                  border: Border(top: BorderSide(color: Color(0xFF1E293B))),
+                  color: Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(15)),
+                  border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
                 ),
                 alignment: Alignment.centerRight,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E293B),
+                    backgroundColor: const Color(0xFF0F172A),
                     foregroundColor: Colors.white,
-                    side: const BorderSide(color: Color(0xFF475569)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Tutup Terminal'),
+                  child: const Text('Tutup Output'),
                 ),
               ),
             ],
@@ -857,6 +864,7 @@ class _SimulasiCanvasScreenState extends State<SimulasiCanvasScreen> with Single
     showDialog(
       context: context,
       barrierDismissible: false,
+      barrierColor: Colors.transparent,
       builder: (_) => const Center(
         child: Card(
           child: Padding(
@@ -908,6 +916,7 @@ class _SimulasiCanvasScreenState extends State<SimulasiCanvasScreen> with Single
   void _showValidationDialog(bool valid, String title, String message, int xp) {
     showDialog(
       context: context,
+      barrierColor: Colors.transparent,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
@@ -978,6 +987,7 @@ class _SimulasiCanvasScreenState extends State<SimulasiCanvasScreen> with Single
   void _showInstruksiDialog() {
     showDialog(
       context: context,
+      barrierColor: Colors.transparent,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(

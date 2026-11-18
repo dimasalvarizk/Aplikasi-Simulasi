@@ -96,11 +96,11 @@
                                 <td class="py-3.5 px-5 whitespace-nowrap">
                                     <div class="flex items-center gap-3">
                                         <div class="w-8 h-8 rounded-xl overflow-hidden bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center font-bold text-xs flex-shrink-0">
-                                            <?php if (!empty($s['avatar'])): ?>
-                                                <img src="<?= str_starts_with($s['avatar'], 'http') ? htmlspecialchars($s['avatar']) : base_url($s['avatar']) ?>" alt="Avatar" class="w-full h-full object-cover">
-                                            <?php else: ?>
-                                                <?= strtoupper(substr($s['nama'], 0, 1)) ?>
-                                            <?php endif; ?>
+                                            <?php $avUrl = getAvatarUrl($s['avatar'] ?? '', $s['nama']); ?>
+                                            <img src="<?= htmlspecialchars($avUrl) ?>" 
+                                                 alt="<?= htmlspecialchars($s['nama']) ?>" 
+                                                 class="w-full h-full object-cover"
+                                                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=<?= urlencode($s['nama']) ?>&background=4f46e5&color=fff&bold=true';">
                                         </div>
                                         <div>
                                             <div class="font-semibold text-slate-900"><?= htmlspecialchars($s['nama']) ?></div>
@@ -117,9 +117,16 @@
                                     <?= htmlspecialchars($s['nisn'] ?? '-') ?>
                                 </td>
                                 <td class="py-3.5 px-5 text-center whitespace-nowrap">
-                                    <span class="inline-block px-2.5 py-1 bg-amber-50 text-amber-800 font-medium rounded-lg text-[11px] border border-amber-200/60 whitespace-nowrap">
-                                        Lvl <?= $s['level'] ?> • <?= number_format($s['total_xp']) ?> XP
-                                    </span>
+                                    <div class="inline-flex flex-col items-center gap-0.5">
+                                        <span class="inline-block px-2.5 py-1 bg-amber-50 text-amber-800 font-medium rounded-lg text-[11px] border border-amber-200/60 whitespace-nowrap">
+                                            Lvl <?= $s['level'] ?> • <?= number_format($s['total_xp']) ?> XP
+                                        </span>
+                                        <?php if (!empty($s['total_kasus_selesai']) && (int)$s['total_kasus_selesai'] > 0): ?>
+                                            <span class="inline-flex items-center gap-1 text-[10px] text-indigo-700 font-semibold bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200/50">
+                                                <i class="fas fa-shield-halved text-[8px]"></i> <?= $s['total_kasus_selesai'] ?> Kasus Siber
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
                                 </td>
                                 <td class="py-3.5 px-5 text-center whitespace-nowrap">
                                     <span class="inline-block px-2 py-0.5 bg-slate-100 text-slate-700 font-medium rounded-lg text-[11px] border border-slate-200 whitespace-nowrap">
@@ -204,7 +211,7 @@
     <!-- ========================================== -->
     <div x-show="openAddModal"
          x-cloak
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-transparent"
          x-transition:enter="transition ease-out duration-150"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
@@ -294,7 +301,7 @@
     <!-- ========================================== -->
     <div x-show="openEditModal"
          x-cloak
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-transparent"
          x-transition:enter="transition ease-out duration-150"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
@@ -384,7 +391,7 @@
     <!-- ============================================== -->
     <div x-show="openResetModal"
          x-cloak
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-transparent"
          x-transition:enter="transition ease-out duration-150"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"

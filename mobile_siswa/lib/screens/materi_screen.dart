@@ -58,6 +58,7 @@ class _MateriScreenState extends State<MateriScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
+      barrierColor: Colors.transparent,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
