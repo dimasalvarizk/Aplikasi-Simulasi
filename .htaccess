@@ -1,0 +1,10 @@
+Options -Indexes
+RewriteEngine On
+RewriteBase /aplikasi-simulasi/
+
+# Izinkan akses langsung ke file & folder yang ada (css, js, gambar, dll.)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Semua request lain → index.php
+RewriteRule ^(.*)$ index.php [L,QSA]

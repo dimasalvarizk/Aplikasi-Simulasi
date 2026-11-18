@@ -1,0 +1,34 @@
+# Operating System
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & Temporary files
+*.log
+*.tmp
+*.bak
+scratch/
+
+# Environment & IDE
+.idea/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Flutter & Dart (Mobile Siswa)
+mobile_siswa/.dart_tool/
+mobile_siswa/.flutter-plugins
+mobile_siswa/.flutter-plugins-dependencies
+mobile_siswa/.pub/
+mobile_siswa/.pub-cache/
+mobile_siswa/build/
+mobile_siswa/windows/flutter/ephemeral/
+mobile_siswa/linux/flutter/ephemeral/
+mobile_siswa/macos/Flutter/ephemeral/
+mobile_siswa/**/.generated/
+
+# Uploads directory (Opsional: keep directory structure with .gitkeep)
+# public/uploads/*
+# !public/uploads/.gitkeep

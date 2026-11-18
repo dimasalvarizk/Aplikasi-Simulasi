@@ -1,0 +1,51 @@
+#!/usr/bin/env php
+<?php
+/**
+ * NetSim Academy CLI Tool (Artisan CLI Compatibility)
+ */
+
+$command = $argv[1] ?? 'help';
+
+if ($command === 'serve') {
+    $host = '127.0.0.1';
+    $port = 8000;
+
+    foreach ($argv as $arg) {
+        if (str_starts_with($arg, '--port=')) {
+            $port = (int)substr($arg, 7);
+        }
+        if (str_starts_with($arg, '--host=')) {
+            $host = substr($arg, 7);
+        }
+    }
+
+    echo "\n  \033[34;1mNetSim Academy Application Server\033[0m\n";
+    echo "  Server berjalan di: \033[32;1mhttp://{$host}:{$port}\033[0m\n";
+    echo "  Buka browser dan login menggunakan akun bawaan:\n";
+    echo "    - Guru: \033[33;1mguru1\033[0m / password123\n";
+    echo "    - Siswa: \033[33;1msiswa1\033[0m / password123\n";
+    echo "  Tekan Ctrl+C untuk menghentikan server.\n\n";
+
+    // Jalankan built-in server PHP menggunakan index.php sebagai router
+    passthru("php -S {$host}:{$port} index.php");
+    exit(0);
+}
+
+if ($command === 'migrate' || $command === 'db:seed' || $command === 'migrate:fresh') {
+    require_once __DIR__ . '/config/app.php';
+    require_once __DIR__ . '/config/database.php';
+
+    echo "\nInisialisasi Database...\n";
+    $db = getDB();
+    echo "Basis data berhasil diverifikasi dan disiapkan!\n\n";
+    exit(0);
+}
+
+// Bantuan perintah
+echo "\n\033[34;1mNetSim Academy CLI (Artisan Compatibility)\033[0m\n\n";
+echo "Perintah yang tersedia:\n";
+echo "  \033[32mphp artisan serve\033[0m           Jalankan local development web server (port 8000)\n";
+echo "  \033[32mphp artisan serve --port=8080\033[0m Jalankan server pada port custom\n";
+echo "  \033[32mphp artisan migrate\033[0m         Inisialisasi tabel dan seed data\n";
+echo "\nCatatan: Jika Apache XAMPP aktif, Anda juga bisa langsung membuka http://localhost/aplikasi-simulasi/ di browser.\n\n";
+exit(0);
