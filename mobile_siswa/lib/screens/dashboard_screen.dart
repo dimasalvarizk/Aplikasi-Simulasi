@@ -102,22 +102,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
         backgroundColor: const Color(0xFFF8FAFC),
         appBar: _selectedTabIndex == 0
             ? AppBar(
+                titleSpacing: 12,
                 title: Row(
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(6),
                       child: Image.asset(
                         'assets/images/logo.jpg',
-                        width: 26,
-                        height: 26,
+                        width: 24,
+                        height: 24,
                         fit: BoxFit.contain,
                         errorBuilder: (_, __, ___) => const Icon(Icons.school_outlined, size: 20),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
-                      'SMPN 1 Karangmoncol',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, letterSpacing: -0.2),
+                    const Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'SMPN 1 Karangmoncol',
+                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, letterSpacing: -0.2),
+                          maxLines: 1,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -128,8 +136,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilScreen()));
                     },
                     child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      margin: const EdgeInsets.symmetric(vertical: 13, horizontal: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(6),
@@ -140,7 +148,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         style: const TextStyle(
                           color: Color(0xFF0F172A),
                           fontWeight: FontWeight.w600,
-                          fontSize: 12,
+                          fontSize: 11.5,
                         ),
                       ),
                     ),
@@ -150,6 +158,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     alignment: Alignment.center,
                     children: [
                       IconButton(
+                        visualDensity: VisualDensity.compact,
                         icon: const Icon(Icons.notifications_outlined, size: 22, color: Color(0xFF334155)),
                         tooltip: 'Pemberitahuan',
                         onPressed: () async {
@@ -162,7 +171,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       if (_unreadNotifCount > 0)
                         Positioned(
-                          right: 8,
+                          right: 4,
                           top: 10,
                           child: Container(
                             padding: const EdgeInsets.all(3),
@@ -191,7 +200,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilScreen()));
                     },
                     child: Container(
-                      margin: const EdgeInsets.only(right: 8, left: 4),
+                      margin: const EdgeInsets.only(right: 8, left: 2),
                       width: 28,
                       height: 28,
                       decoration: BoxDecoration(
@@ -209,7 +218,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           : const Icon(Icons.person_outline, size: 18, color: Color(0xFF334155)),
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 2),
                 ],
               )
             : null,
