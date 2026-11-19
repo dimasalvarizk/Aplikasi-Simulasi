@@ -533,7 +533,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Expanded(
                 child: _buildMiniStatCard(
                   label: 'Simulasi',
-                  value: '${_simulasiList.length} Lab',
+                  value: '${_simulasiList.length}',
                   icon: Icons.hub,
                   color: const Color(0xFF059669),
                 ),
@@ -1003,7 +1003,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
@@ -1019,35 +1019,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Row(
         children: [
           Container(
-            width: 32,
-            height: 32,
+            width: 30,
+            height: 30,
             decoration: BoxDecoration(
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: color, size: 16),
+            child: Icon(icon, color: color, size: 15),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F172A),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F172A),
+                    ),
+                    maxLines: 1,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 10.5,
-                    color: Color(0xFF64748B),
-                    fontWeight: FontWeight.w500,
+                const SizedBox(height: 1),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      color: Color(0xFF64748B),
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
                   ),
                 ),
               ],

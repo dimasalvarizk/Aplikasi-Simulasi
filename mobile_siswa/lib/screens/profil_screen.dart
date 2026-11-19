@@ -187,15 +187,33 @@ if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Foto profil berhasil diperbarui!'),
+              content: Text('Foto profil avatar berhasil diperbarui!'),
               backgroundColor: Color(0xFF16A34A),
               duration: Duration(seconds: 2),
             ),
           );
           _loadProfil();
         }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res['message'] ?? 'Gagal memperbarui avatar. Periksa koneksi ke server.'),
+              backgroundColor: const Color(0xFFDC2626),
+            ),
+          );
+        }
       }
-    } catch (_) {}
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Koneksi gagal: $e. Pastikan HP dan server laptop terhubung.'),
+            backgroundColor: const Color(0xFFDC2626),
+          ),
+        );
+      }
+    }
   }
 
   void _showAvatarPickerBottomSheet() {
@@ -204,7 +222,8 @@ if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
     String? selectedFilePath;
     bool isUploading = false;
     bool isApplyingUrl = false;
-    String? statusError;
+    String? uploadError;
+    String? urlError;
 
     showModalBottomSheet(
       context: context,
@@ -279,11 +298,11 @@ if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                                     if (path != null) {
                                       setModalState(() {
                                         selectedFilePath = path;
-                                        statusError = null;
+                                        uploadError = null;
                                       });
                                     } else if (!kIsWeb && !Platform.isWindows) {
                                       setModalState(() {
-                                        statusError = 'Silakan pilih avatar di bawah atau masukkan URL foto.';
+                                        uploadError = 'Untuk HP Android, silakan pilih salah satu dari 12 Avatar Karakter keren di bawah atau masukkan URL foto.';
                                       });
                                     }
                                   },
@@ -362,7 +381,7 @@ if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                                   onPressed: () {
                                     setModalState(() {
                                       selectedFilePath = null;
-                                      statusError = null;
+                                      uploadError = null;
                                     });
                                   },
                                   child: const Text('Ganti', style: TextStyle(fontSize: 11, color: Color(0xFFDC2626))),
@@ -397,7 +416,7 @@ if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                                   : () async {
                                       setModalState(() {
                                         isUploading = true;
-                                        statusError = null;
+                                        uploadError = null;
                                       });
                                       try {
                                         final res = await ApiService.uploadAvatarFile(globalUser.id, selectedFilePath!);
@@ -419,12 +438,12 @@ if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                                           }
                                         } else {
                                           setModalState(() {
-                                            statusError = res['message'] ?? 'Gagal mengunggah foto.';
+                                            uploadError = res['message'] ?? 'Gagal mengunggah foto.';
                                           });
                                         }
                                       } catch (e) {
                                         setModalState(() {
-                                          statusError = 'Gagal upload: $e';
+                                          uploadError = 'Gagal upload: $e';
                                         });
                                       } finally {
                                         setModalState(() {
@@ -436,10 +455,10 @@ if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                           ),
                         ],
 
-                        if (statusError != null) ...[
+                        if (uploadError != null) ...[
                           const SizedBox(height: 8),
                           Text(
-                            statusError!,
+                            uploadError!,
                             style: const TextStyle(color: Color(0xFFDC2626), fontSize: 11, fontWeight: FontWeight.w500),
                           ),
                         ],
@@ -561,7 +580,7 @@ if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                                 String rawUrl = urlController.text.trim();
                                 if (rawUrl.isEmpty) {
                                   setModalState(() {
-                                    statusError = 'Silakan ketik atau tempel link URL foto terlebih dahulu.';
+                                    urlError = 'Silakan ketik atau tempel link URL foto terlebih dahulu.';
                                   });
                                   return;
                                 }
@@ -572,7 +591,7 @@ if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
 
                                 setModalState(() {
                                   isApplyingUrl = true;
-                                  statusError = null;
+                                  urlError = null;
                                 });
 
                                 try {
@@ -595,12 +614,12 @@ if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                                     }
                                   } else {
                                     setModalState(() {
-                                      statusError = res['message'] ?? 'Gagal memperbarui foto dari URL.';
+                                      urlError = res['message'] ?? 'Gagal memperbarui foto dari URL.';
                                     });
                                   }
                                 } catch (e) {
                                   setModalState(() {
-                                    statusError = 'Gagal menerapkan URL: $e';
+                                    urlError = 'Gagal menerapkan URL: $e';
                                   });
                                 } finally {
                                   setModalState(() {
@@ -618,10 +637,10 @@ if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                       ),
                     ],
                   ),
-                  if (statusError != null) ...[
+                  if (urlError != null) ...[
                     const SizedBox(height: 10),
                     Text(
-                      statusError!,
+                      urlError!,
                       style: const TextStyle(color: Color(0xFFDC2626), fontSize: 11, fontWeight: FontWeight.w500),
                     ),
                   ],

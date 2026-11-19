@@ -14,12 +14,12 @@ class ApiService {
     if (!kIsWeb) {
       try {
         if (defaultTargetPlatform == TargetPlatform.android) {
-          // Prioritas default untuk HP Android fisik saat konek ke Hotspot HP / WiFi Laptop
-          return 'http://10.34.197.13/Aplikasi-Simulasi/api';
+          // Prioritas default untuk HP Android fisik: coba IP Wi-Fi laptop saat ini
+          return 'http://192.168.1.8/aplikasi-simulasi/api';
         }
       } catch (_) {}
     }
-    return 'http://localhost/Aplikasi-Simulasi/api';
+    return 'http://localhost/aplikasi-simulasi/api';
   }
 
   static final List<String> _knownAppPaths = [
@@ -131,20 +131,27 @@ class ApiService {
   static Future<List<String>> getSmartCandidateUrls() async {
     final Set<String> candidates = {
       baseUrl,
-      'http://10.34.197.13/Aplikasi-Simulasi-main1/api',
-      'http://10.34.197.13/aplikasi-simulasi-main1/api',
-      'http://10.34.197.13/aplikasi-simulasi/api',
-      'http://192.168.18.6/aplikasi-simulasi-main1/api',
-      'http://192.168.18.6/Aplikasi-Simulasi-main1/api',
+      // Target USB Kabel via ADB Reverse (port 8080 dan port 80)
+      'http://localhost:8080/aplikasi-simulasi/api',
+      'http://127.0.0.1:8080/aplikasi-simulasi/api',
+      'http://localhost:8080/Aplikasi-Simulasi-main1/api',
+      'http://127.0.0.1:8080/Aplikasi-Simulasi-main1/api',
+      'http://localhost/aplikasi-simulasi/api',
+      'http://127.0.0.1/aplikasi-simulasi/api',
+      'http://localhost/Aplikasi-Simulasi-main1/api',
+      // IP Laptop saat ini (Wi-Fi 192.168.1.8)
+      'http://192.168.1.8/aplikasi-simulasi/api',
+      'http://192.168.1.8/Aplikasi-Simulasi-main1/api',
+      'http://192.168.1.8:8080/aplikasi-simulasi/api',
+      // IP Umum Hotspot & Wi-Fi
+      'http://192.168.43.1/aplikasi-simulasi/api',
+      'http://192.168.43.1/Aplikasi-Simulasi-main1/api',
       'http://192.168.18.6/aplikasi-simulasi/api',
-      'http://192.168.43.1/aplikasi-simulasi-main1/api',
-      'http://192.168.43.1/aplikasi-simulasi/api', // Hotspot HP umum
+      'http://192.168.18.6/Aplikasi-Simulasi-main1/api',
+      'http://10.34.197.13/aplikasi-simulasi/api',
+      'http://10.34.197.13/Aplikasi-Simulasi-main1/api',
       'http://10.0.2.2/aplikasi-simulasi/api',     // Android Emulator
       'http://10.0.2.2/Aplikasi-Simulasi-main1/api',
-      'http://localhost/Aplikasi-Simulasi-main1/api',
-      'http://localhost/aplikasi-simulasi-main1/api',
-      'http://localhost/aplikasi-simulasi/api',
-      'http://192.168.1.8/aplikasi-simulasi/api',
       'http://192.168.0.193/aplikasi-simulasi/api',
     };
 

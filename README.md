@@ -46,15 +46,17 @@ flowchart TD
     LoginGuru --> DashGuru["Dashboard Analitik & Monitoring Guru"]
     
     DashGuru --> MenuGuru{"Pilih Manajemen Guru"}
-    MenuGuru -- "Materi & Modul" --> ModulMgr["Kelola Modul & Bab Teori Topologi (WYSIWYG)"]
-    MenuGuru -- "Bank Kuis" --> KuisMgr["Kelola Paket Kuis, Butir Soal, Passing Grade, & Hapus"]
-    MenuGuru -- "Detektif Siber" --> SiberMgr["Kelola Skenario Kasus Phishing & Rekayasa Sosial"]
-    MenuGuru -- "Akun & Keamanan" --> SiswaMgr["Manajemen Akun Siswa & Otoritas Reset Kata Sandi"]
-    MenuGuru -- "Evaluasi & Laporan" --> RekapMgr["Pantau Aktivitas Waktu-Nyata & Ekspor Excel/CSV"]
+    MenuGuru -- "1. Materi & Modul" --> ModulMgr["Kelola Modul & Bab Teori (Editor WYSIWYG)"]
+    MenuGuru -- "2. Bank Kuis" --> KuisMgr["Kelola Paket Kuis & Butir Soal (Passing Grade & Hapus)"]
+    MenuGuru -- "3. Simulasi Topologi" --> SimMgr["Kelola Tantangan Topologi & Simpan Kunci Jawaban Kanvas"]
+    MenuGuru -- "4. Detektif Siber" --> SiberMgr["Kelola Skenario Kasus Phishing & Rekayasa Sosial"]
+    MenuGuru -- "5. Akun Siswa" --> SiswaMgr["Manajemen Akun Siswa & Otoritas Reset Kata Sandi"]
+    MenuGuru -- "6. Laporan Nilai" --> RekapMgr["Pantau Aktivitas Waktu-Nyata & Ekspor Excel/CSV"]
 
     %% Hubungan ke Database dari Guru
     ModulMgr --> SimpanDB[("Database Terpusat (MySQL / SQLite)")]
     KuisMgr --> SimpanDB
+    SimMgr --> SimpanDB
     SiberMgr --> SimpanDB
     SiswaMgr --> SimpanDB
     SimpanDB --> RekapMgr
@@ -71,29 +73,31 @@ flowchart TD
     DashSiswa --> AktivitasSiswa{"Pilih Aktivitas Pembelajaran"}
     
     %% Alur Belajar Siswa
-    AktivitasSiswa -- "1. Belajar Teori" --> BacaMateri["Membaca Konten Modul & Tandai Selesai (+15 XP)"]
-    AktivitasSiswa -- "2. Uji Kuis" --> KerjakanKuis["Mengerjakan Kuis Pilihan Ganda Berwaktu"]
+    AktivitasSiswa -- "1. Belajar Teori" --> BacaMateri["Membaca Konten Modul Teori"]
+    AktivitasSiswa -- "2. Uji Kuis" --> KerjakanKuis["Mengerjakan Kuis Pilihan Ganda (Timer & Multi-soal)"]
     AktivitasSiswa -- "3. Praktik Kanvas" --> RancangTopologi["Rancang Kanvas 2D & Uji Ping Paket Data"]
     AktivitasSiswa -- "4. Detektif Siber" --> AnalisisSiber["Analisis Tautan Phishing & Skenario Penipuan"]
-    AktivitasSiswa -- "5. Profil & Peringkat" --> LihatPeringkat["Pantau Podium Leaderboard & Lencana Siswa"]
 
-    %% Evaluasi & Gamifikasi Terintegrasi
-    BacaMateri --> EngineEvaluasi["Mesin Validasi & Gamifikasi Backend"]
-    KerjakanKuis --> EngineEvaluasi
+    %% Alur Validasi Spesifik Tiap Fitur
+    BacaMateri --> KlaimTeori["Validasi Baca Selesai:\nLangsung Klaim Reward (+15 XP)"]
+    
+    KerjakanKuis --> EngineEvaluasi["Mesin Penilaian Otomatis Backend\n(Kunci Kuis, Kaidah Topologi & Akurasi Siber)"]
     RancangTopologi --> EngineEvaluasi
     AnalisisSiber --> EngineEvaluasi
 
-    EngineEvaluasi --> EvaluasiRule{"Validasi & Syarat Kelulusan"}
-    EvaluasiRule -- "Lulus / Tepat" --> RewardKlaim["Reward: Tambah XP, Streak Harian, & Buka Lencana"]
-    EvaluasiRule -- "Remedial / Keliru" --> FeedbackEdukatif["Feedback Petunjuk Evaluasi untuk Dicoba Ulang"]
+    EngineEvaluasi --> EvaluasiRule{"Valid / Nilai >= KKM?\n(KKM: 75 / Topologi Valid)"}
+    EvaluasiRule -- "Ya / Lulus" --> RewardKlaim["Reward Penuh: Tambah XP (+30 s/d +100 XP), Streak & Buka Lencana"]
+    EvaluasiRule -- "Tidak / Remedial" --> FeedbackEdukatif["Evaluasi Diagnostik Error & Petunjuk Remedial"]
+    FeedbackEdukatif -. "Coba Ulang / Perbaiki" .-> AktivitasSiswa
 
-    RewardKlaim --> UpdateStateDB["Update Skor, Level, & Status ke Database"]
-    FeedbackEdukatif --> UpdateStateDB
+    %% Akumulasi ke Profil & Leaderboard
+    KlaimTeori --> UpdateStateDB["Update Total XP, Level Pangkat, & Klasemen Leaderboard"]
+    RewardKlaim --> UpdateStateDB
     UpdateStateDB --> SimpanDB
 
     %% Siklus Umpan Balik Real-Time
     SimpanDB -. "Sinkronisasi Real-Time" .-> DashGuru
-    SimpanDB -. "Pembaruan Peringkat" .-> LihatPeringkat
+    UpdateStateDB --> LihatPeringkat["Podium Leaderboard Kelas & Profil Mandiri Siswa"]
     LihatPeringkat --> SelesaiApp(["Selesai Sesi Belajar / Logout"])
 ```
 
@@ -123,6 +127,7 @@ flowchart LR
         UC12["Ganti Kata Sandi & Avatar di Profil"]
         UC13["Kelola Skenario Kasus Keamanan Siber"]
         UC14["Praktik Detektif Siber & Klaim Badge"]
+        UC15["Kelola Tantangan Simulasi Topologi & Kunci Jawaban Kanvas"]
     end
 
     Guru --> UC1
@@ -132,6 +137,7 @@ flowchart LR
     Guru --> UC5
     Guru --> UC10
     Guru --> UC13
+    Guru --> UC15
 
     Siswa --> UC1
     Siswa --> UC6
