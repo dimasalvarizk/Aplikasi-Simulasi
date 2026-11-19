@@ -32,7 +32,74 @@ Aplikasi ini mengintegrasikan dua platform yang saling terhubung secara *real-ti
 
 ## 📊 Diagram Use Case & Flowchart Sistem
 
-### 1. Diagram Use Case (Arsitektur Fungsional Multi-Peran)
+### 1. Flowchart Sistem Secara Umum (End-to-End High-Level Architecture)
+
+Diagram alir berikut menggambarkan proses integrasi menyeluruh antara **Portal Guru (Web)**, **Portal Siswa (Mobile Flutter)**, **Backend RESTful API**, dan **Penyimpanan Database Terpusat**:
+
+```mermaid
+flowchart TD
+    %% Node Awal
+    Start(["Mulai Akses Aplikasi"]) --> CekPeran{"Akses Platform & Peran"}
+
+    %% Sisi Guru (Web Browser)
+    CekPeran -- "Guru / Administrator (Web Browser)" --> LoginGuru["Login Portal Guru via Web"]
+    LoginGuru --> DashGuru["Dashboard Analitik & Monitoring Guru"]
+    
+    DashGuru --> MenuGuru{"Pilih Manajemen Guru"}
+    MenuGuru -- "Materi & Modul" --> ModulMgr["Kelola Modul & Bab Teori Topologi (WYSIWYG)"]
+    MenuGuru -- "Bank Kuis" --> KuisMgr["Kelola Paket Kuis, Butir Soal, Passing Grade, & Hapus"]
+    MenuGuru -- "Detektif Siber" --> SiberMgr["Kelola Skenario Kasus Phishing & Rekayasa Sosial"]
+    MenuGuru -- "Akun & Keamanan" --> SiswaMgr["Manajemen Akun Siswa & Otoritas Reset Kata Sandi"]
+    MenuGuru -- "Evaluasi & Laporan" --> RekapMgr["Pantau Aktivitas Waktu-Nyata & Ekspor Excel/CSV"]
+
+    %% Hubungan ke Database dari Guru
+    ModulMgr --> SimpanDB[("Database Terpusat (MySQL / SQLite)")]
+    KuisMgr --> SimpanDB
+    SiberMgr --> SimpanDB
+    SiswaMgr --> SimpanDB
+    SimpanDB --> RekapMgr
+
+    %% Sisi Siswa (Flutter Mobile / Web)
+    CekPeran -- "Siswa (Aplikasi Mobile Flutter)" --> BukaApp["Buka Aplikasi Siswa (Splash Screen Logo Sekolah)"]
+    BukaApp --> AutoDiscovery["Proses Fast Auto-Discovery Menemukan Server di Wi-Fi"]
+    AutoDiscovery --> LoginSiswa["Login Siswa (NISN / Username & Password)"]
+    LoginSiswa --> VerifikasiLogin{"Autentikasi Akun via API"}
+    
+    VerifikasiLogin -- "Gagal / Lupa Sandi" --> LupaSandiFlow["Kirim Pengajuan Reset Sandi ke Guru"] --> SiswaMgr
+    VerifikasiLogin -- "Berhasil" --> DashSiswa["Dashboard Beranda Siswa (XP, Level, Streak)"]
+
+    DashSiswa --> AktivitasSiswa{"Pilih Aktivitas Pembelajaran"}
+    
+    %% Alur Belajar Siswa
+    AktivitasSiswa -- "1. Belajar Teori" --> BacaMateri["Membaca Konten Modul & Tandai Selesai (+15 XP)"]
+    AktivitasSiswa -- "2. Uji Kuis" --> KerjakanKuis["Mengerjakan Kuis Pilihan Ganda Berwaktu"]
+    AktivitasSiswa -- "3. Praktik Kanvas" --> RancangTopologi["Rancang Kanvas 2D & Uji Ping Paket Data"]
+    AktivitasSiswa -- "4. Detektif Siber" --> AnalisisSiber["Analisis Tautan Phishing & Skenario Penipuan"]
+    AktivitasSiswa -- "5. Profil & Peringkat" --> LihatPeringkat["Pantau Podium Leaderboard & Lencana Siswa"]
+
+    %% Evaluasi & Gamifikasi Terintegrasi
+    BacaMateri --> EngineEvaluasi["Mesin Validasi & Gamifikasi Backend"]
+    KerjakanKuis --> EngineEvaluasi
+    RancangTopologi --> EngineEvaluasi
+    AnalisisSiber --> EngineEvaluasi
+
+    EngineEvaluasi --> EvaluasiRule{"Validasi & Syarat Kelulusan"}
+    EvaluasiRule -- "Lulus / Tepat" --> RewardKlaim["Reward: Tambah XP, Streak Harian, & Buka Lencana"]
+    EvaluasiRule -- "Remedial / Keliru" --> FeedbackEdukatif["Feedback Petunjuk Evaluasi untuk Dicoba Ulang"]
+
+    RewardKlaim --> UpdateStateDB["Update Skor, Level, & Status ke Database"]
+    FeedbackEdukatif --> UpdateStateDB
+    UpdateStateDB --> SimpanDB
+
+    %% Siklus Umpan Balik Real-Time
+    SimpanDB -. "Sinkronisasi Real-Time" .-> DashGuru
+    SimpanDB -. "Pembaruan Peringkat" .-> LihatPeringkat
+    LihatPeringkat --> SelesaiApp(["Selesai Sesi Belajar / Logout"])
+```
+
+---
+
+### 2. Diagram Use Case (Arsitektur Fungsional Multi-Peran)
 
 ```mermaid
 flowchart LR
@@ -79,7 +146,7 @@ flowchart LR
 
 ---
 
-### 2. Flowchart Alur Pembelajaran Siswa & Simulasi Topologi
+### 3. Flowchart Alur Pembelajaran Siswa & Simulasi Topologi
 
 ```mermaid
 flowchart TD
@@ -126,7 +193,7 @@ flowchart TD
 
 ---
 
-### 3. Flowchart Manajemen Bank Kuis oleh Guru (Buat, Edit, Hapus)
+### 4. Flowchart Manajemen Bank Kuis oleh Guru (Buat, Edit, Hapus)
 
 ```mermaid
 flowchart TD
@@ -169,6 +236,10 @@ flowchart TD
 
 ### 4. Flowchart Koneksi Otomatis Mobile (Zero-Configuration Auto-Discovery)
 
+---
+
+### 5. Flowchart Koneksi Otomatis Mobile (Zero-Configuration Auto-Discovery)
+
 ```mermaid
 flowchart TD
     AppLaunch(["Siswa Membuka Aplikasi Mobile"]) --> InitDiscovery["Jalankan ApiService.autoDiscoverServer() di Latar Belakang"]
@@ -192,7 +263,7 @@ flowchart TD
 
 ---
 
-### 5. Flowchart Alur Pemulihan & Ganti Kata Sandi Siswa
+### 6. Flowchart Alur Pemulihan & Ganti Kata Sandi Siswa
 
 ```mermaid
 flowchart TD
@@ -224,7 +295,7 @@ flowchart TD
 
 ---
 
-### 6. Flowchart Praktik Detektif Siber (Tantangan Keamanan Internet & Anti-Phishing)
+### 7. Flowchart Praktik Detektif Siber (Tantangan Keamanan Internet & Anti-Phishing)
 
 ```mermaid
 flowchart TD
