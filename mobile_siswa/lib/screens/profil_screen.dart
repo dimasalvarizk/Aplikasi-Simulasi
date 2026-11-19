@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/user_model.dart';
 import '../services/api_service.dart';
 import 'login_screen.dart';
@@ -143,6 +144,23 @@ class _ProfilScreenState extends State<ProfilScreen> {
   }
 
   Future<String?> _pickImageFile() async {
+    // 1. Prioritas utama: ImagePicker resmi (Android, iOS, Web)
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      if (image != null && image.path.isNotEmpty) {
+        return image.path;
+      }
+    } catch (e) {
+      debugPrint('ImagePicker gallery error: $e');
+    }
+
+    // 2. Fallback sekunder khusus Windows Desktop
     try {
       if (!kIsWeb && Platform.isWindows) {
         const psScript = r'''
@@ -170,7 +188,7 @@ if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
         }
       }
     } catch (e) {
-      debugPrint('Error picking file: $e');
+      debugPrint('Error picking file via Windows dialog: $e');
     }
     return null;
   }
@@ -294,15 +312,17 @@ if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                             onTap: isUploading
                                 ? null
                                 : () async {
-                                    final path = await _pickImageFile();
-                                    if (path != null) {
+                                    try {
+                                      final path = await _pickImageFile();
+                                      if (path != null && path.isNotEmpty) {
+                                        setModalState(() {
+                                          selectedFilePath = path;
+                                          uploadError = null;
+                                        });
+                                      }
+                                    } catch (err) {
                                       setModalState(() {
-                                        selectedFilePath = path;
-                                        uploadError = null;
-                                      });
-                                    } else if (!kIsWeb && !Platform.isWindows) {
-                                      setModalState(() {
-                                        uploadError = 'Untuk HP Android, silakan pilih salah satu dari 12 Avatar Karakter keren di bawah atau masukkan URL foto.';
+                                        uploadError = 'Gagal membuka galeri: $err';
                                       });
                                     }
                                   },

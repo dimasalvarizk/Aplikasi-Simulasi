@@ -37,7 +37,11 @@
                             </span>
                         </div>
 
-                        <h3 class="font-bold text-slate-900 text-sm line-clamp-1"><?= htmlspecialchars($k['judul']) ?></h3>
+                        <h3 class="font-bold text-slate-900 text-sm line-clamp-1">
+                            <a href="<?= base_url('guru/kuis/detail/' . $k['id']) ?>" class="hover:text-blue-600 transition" title="Buka Detail & Soal">
+                                <?= htmlspecialchars($k['judul']) ?>
+                            </a>
+                        </h3>
                         <p class="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed"><?= htmlspecialchars($k['deskripsi'] ?? 'Evaluasi pemahaman konsep topologi jaringan.') ?></p>
 
                         <div class="grid grid-cols-3 gap-2 my-3.5 p-2.5 bg-slate-50 rounded-xl border border-slate-200/60 text-center text-xs">
@@ -57,15 +61,10 @@
                     </div>
 
                     <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
-                        <span class="text-xs text-slate-500 font-medium">
+                        <a href="<?= base_url('guru/kuis/detail/' . $k['id']) ?>" class="text-xs text-slate-500 hover:text-slate-800 font-medium transition flex items-center" title="Buka Detail Soal & Rekap Nilai">
                             <i class="fas fa-question-circle text-slate-400 mr-1 text-[11px]"></i> <?= $k['jumlah_soal'] ?> Soal
-                        </span>
+                        </a>
                         <div class="flex items-center gap-1.5">
-                            <a href="<?= base_url('guru/kuis/detail/' . $k['id']) ?>"
-                               class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition text-xs font-medium"
-                               title="Kelola Soal & Rekap Nilai">
-                                Detail & Soal
-                            </a>
                             <a href="<?= base_url('guru/kuis/edit/' . $k['id']) ?>"
                                class="px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg transition text-xs font-medium flex items-center gap-1"
                                title="Edit Pengaturan Kuis">
