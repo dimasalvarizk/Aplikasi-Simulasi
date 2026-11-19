@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
+import '../services/api_service.dart';
 import 'dashboard_screen.dart';
 import 'login_screen.dart';
 
@@ -35,6 +36,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     );
 
     _controller.forward();
+
+    // Jalankan auto-discovery server di background saat splash berlangsung
+    ApiService.autoDiscoverServer();
 
     // Timer transisi otomatis ke login atau dashboard (2 detik)
     Timer(const Duration(milliseconds: 2000), _navigateToNextScreen);

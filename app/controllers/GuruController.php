@@ -905,6 +905,45 @@ class GuruController
         ]);
     }
 
+    public function kuisDelete($id)
+    {
+        $id   = (int)$id;
+        $kuis = $this->_findKuis($id);
+
+        try {
+            // 1. Hapus riwayat pengerjaan nilai kuis siswa
+            $this->db->prepare("DELETE FROM hasil_kuis WHERE kuis_id = ?")->execute([$id]);
+            // 2. Hapus seluruh butir soal kuis
+            $this->db->prepare("DELETE FROM soal WHERE kuis_id = ?")->execute([$id]);
+            // 3. Hapus kuis utama
+            $this->db->prepare("DELETE FROM kuis WHERE id = ?")->execute([$id]);
+
+            setFlash('success', 'Paket kuis "' . htmlspecialchars($kuis['judul']) . '" beserta seluruh butir soal dan rekap nilainya berhasil dihapus.');
+        } catch (Throwable $e) {
+            setFlash('error', 'Gagal menghapus kuis: ' . $e->getMessage());
+        }
+
+        redirect(base_url('guru/kuis'));
+    }
+
+    public function soalDelete($id)
+    {
+        $id   = (int)$id;
+        $stmt = $this->db->prepare("SELECT kuis_id FROM soal WHERE id = ?");
+        $stmt->execute([$id]);
+        $soal = $stmt->fetch();
+
+        if ($soal) {
+            $kuisId = (int)$soal['kuis_id'];
+            $this->db->prepare("DELETE FROM soal WHERE id = ?")->execute([$id]);
+            setFlash('success', 'Butir soal berhasil dihapus.');
+            redirect(base_url('guru/kuis/detail/' . $kuisId));
+        }
+
+        setFlash('error', 'Butir soal tidak ditemukan.');
+        redirect(base_url('guru/kuis'));
+    }
+
     // =========================================================
     // LAPORAN & EKSPOR
     // =========================================================

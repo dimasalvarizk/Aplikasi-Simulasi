@@ -19,6 +19,13 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _errorMessage;
 
   @override
+  void initState() {
+    super.initState();
+    // Jalankan auto-discovery diam-diam untuk mencari server di Wi-Fi
+    ApiService.autoDiscoverServer();
+  }
+
+  @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
@@ -357,126 +364,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _showServerSettingsDialog() {
-    final urlController = TextEditingController(text: ApiService.baseUrl);
-
-    showDialog(
-      context: context,
-      barrierColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
-            children: const [
-              Icon(Icons.dns_rounded, color: Color(0xFF2563EB), size: 22),
-              SizedBox(width: 8),
-              Text('Pengaturan Server API', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Pilih Preset atau Masukkan URL API:',
-                style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  ActionChip(
-                    avatar: const Icon(Icons.wifi, size: 14, color: Color(0xFF2563EB)),
-                    label: const Text('WiFi (192.168.1.8)', style: TextStyle(fontSize: 11)),
-                    backgroundColor: const Color(0xFFEFF6FF),
-                    onPressed: () {
-                      setDialogState(() {
-                        urlController.text = 'http://192.168.1.8/aplikasi-simulasi/api';
-                      });
-                    },
-                  ),
-                  ActionChip(
-                    avatar: const Icon(Icons.android, size: 14, color: Color(0xFF16A34A)),
-                    label: const Text('Emulator (10.0.2.2)', style: TextStyle(fontSize: 11)),
-                    backgroundColor: const Color(0xFFF0FDF4),
-                    onPressed: () {
-                      setDialogState(() {
-                        urlController.text = 'http://10.0.2.2/aplikasi-simulasi/api';
-                      });
-                    },
-                  ),
-                  ActionChip(
-                    avatar: const Icon(Icons.wifi, size: 14, color: Color(0xFF2563EB)),
-                    label: const Text('WiFi (192.168.0.193)', style: TextStyle(fontSize: 11)),
-                    backgroundColor: const Color(0xFFEFF6FF),
-                    onPressed: () {
-                      setDialogState(() {
-                        urlController.text = 'http://192.168.0.193/aplikasi-simulasi/api';
-                      });
-                    },
-                  ),
-                  ActionChip(
-                    avatar: const Icon(Icons.computer, size: 14, color: Color(0xFF475569)),
-                    label: const Text('Localhost', style: TextStyle(fontSize: 11)),
-                    backgroundColor: const Color(0xFFF1F5F9),
-                    onPressed: () {
-                      setDialogState(() {
-                        urlController.text = 'http://localhost/aplikasi-simulasi/api';
-                      });
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: urlController,
-                style: const TextStyle(fontSize: 13, fontFamily: 'monospace'),
-                decoration: InputDecoration(
-                  labelText: 'URL API Backend',
-                  prefixIcon: const Icon(Icons.link, size: 18),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                '* Emulator Android wajib pakai 10.0.2.2 untuk membaca XAMPP PC.',
-                style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontStyle: FontStyle.italic),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              onPressed: () {
-                final newUrl = urlController.text.trim();
-                ApiService.setBaseUrl(newUrl);
-                setState(() {});
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Server disetel ke: $newUrl'),
-                    backgroundColor: const Color(0xFF16A34A),
-                  ),
-                );
-              },
-              child: const Text('Simpan'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -544,12 +431,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ],
                         ),
-                      ),
-                      // Tombol Pengaturan Server
-                      IconButton(
-                        icon: const Icon(Icons.settings_outlined, size: 22, color: Colors.white),
-                        tooltip: 'Server API',
-                        onPressed: _showServerSettingsDialog,
                       ),
                     ],
                   ),

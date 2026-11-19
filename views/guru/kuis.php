@@ -62,9 +62,21 @@
                         </span>
                         <div class="flex items-center gap-1.5">
                             <a href="<?= base_url('guru/kuis/detail/' . $k['id']) ?>"
-                               class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition text-xs font-medium">
-                                Kelola Soal & Rekap
+                               class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition text-xs font-medium"
+                               title="Kelola Soal & Rekap Nilai">
+                                Detail & Soal
                             </a>
+                            <a href="<?= base_url('guru/kuis/edit/' . $k['id']) ?>"
+                               class="px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg transition text-xs font-medium flex items-center gap-1"
+                               title="Edit Pengaturan Kuis">
+                                <i class="fas fa-pencil-alt text-[10px]"></i> Edit
+                            </a>
+                            <button type="button"
+                               onclick="confirmDelete('<?= base_url('guru/kuis/delete/' . $k['id']) ?>', 'Hapus Paket Kuis?', 'Apakah Anda yakin ingin menghapus paket kuis &quot;<?= htmlspecialchars(addslashes($k['judul'])) ?>&quot;? Seluruh butir soal dan riwayat nilai siswa pada kuis ini akan ikut terhapus.')"
+                               class="px-2.5 py-1.5 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-lg transition text-xs font-medium flex items-center gap-1"
+                               title="Hapus Kuis">
+                                <i class="fas fa-trash-alt text-[10px]"></i> Hapus
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -1,78 +1,300 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  // Otomatis memilih baseUrl default:
-  // - Android Emulator: http://10.0.2.2/aplikasi-simulasi/api
-  // - Windows / Desktop / Web: http://localhost/aplikasi-simulasi/api
+  // Otomatis memilih baseUrl default (di Android langsung mengarah ke IP laptop atau auto-scan)
   static String baseUrl = _getDefaultBaseUrl();
+  static bool _isDiscovering = false;
+  static Completer<String?>? _discoveryCompleter;
 
   static String _getDefaultBaseUrl() {
     if (!kIsWeb) {
       try {
         if (defaultTargetPlatform == TargetPlatform.android) {
-          return 'http://10.0.2.2/aplikasi-simulasi/api';
+          // Prioritas default untuk HP Android fisik (laptop teman & personal)
+          return 'http://192.168.18.6/aplikasi-simulasi-main1/api';
         }
       } catch (_) {}
     }
     return 'http://localhost/aplikasi-simulasi/api';
   }
 
+  static final List<String> _knownAppPaths = [
+    'aplikasi-simulasi-main1',
+    'Aplikasi-Simulasi-main1',
+    'aplikasi-simulasi',
+    'Aplikasi-Simulasi-main',
+    'Aplikasi-Simulasi',
+  ];
+
+  /// Membersihkan dan menormalkan URL yang diketik/ditempel
+  /// Menghindari typo seperti 'http://lochttp://192.168.18.6...' atau '/192.168.18.6/...'
+  static String sanitizeUrl(String raw) {
+    var url = raw.trim();
+    if (url.isEmpty) return 'http://192.168.18.6/aplikasi-simulasi/api';
+
+    // Bersihkan leading slash jika tidak sengaja terketik seperti '/192.168.18.6...'
+    while (url.startsWith('/')) {
+      url = url.substring(1).trim();
+    }
+
+    // Perbaiki jika pengguna tidak sengaja menempel di tengah 'localhost'
+    if (url.contains('http://') || url.contains('https://')) {
+      final lastIdx = url.lastIndexOf(RegExp(r'https?://'));
+      if (lastIdx > 0) {
+        url = url.substring(lastIdx);
+      }
+    }
+
+    // Bersihkan multiple http://
+    url = url.replaceAll(RegExp(r'^(https?://)+', caseSensitive: false), 'http://');
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'http://$url';
+    }
+
+    url = url.replaceAll(RegExp(r'/+$'), '');
+
+    final uri = Uri.tryParse(url);
+    if (uri != null) {
+      // Jika pengguna hanya mengetik IP atau host tanpa folder (misal: 192.168.18.6 atau localhost)
+      if (uri.path.isEmpty || uri.path == '/' || uri.path == '/api') {
+        final hostPart = uri.hasPort ? '${uri.host}:${uri.port}' : uri.host;
+        return 'http://$hostPart/aplikasi-simulasi/api';
+      }
+    }
+
+    // Pastikan berakhiran /api jika belum ada
+    if (!url.endsWith('/api') && !url.contains('/api/')) {
+      url = '$url/api';
+    }
+    return url;
+  }
+
+  /// Menghasilkan URL alternatif untuk mengantisipasi perbedaan nama folder di laptop lain
+  /// Contoh: /aplikasi-simulasi/ <--> /Aplikasi-Simulasi-main1/
+  static List<String> getAlternateFolderUrls(String currentUrl) {
+    final List<String> alternates = [];
+    final current = sanitizeUrl(currentUrl);
+    for (final folder in _knownAppPaths) {
+      for (final target in _knownAppPaths) {
+        if (folder != target && current.contains('/$folder')) {
+          final candidate = current.replaceAll('/$folder', '/$target');
+          if (!alternates.contains(candidate) && candidate != current) {
+            alternates.add(candidate);
+          }
+        }
+      }
+    }
+    return alternates;
+  }
+
   static void setBaseUrl(String url) {
-    baseUrl = url.replaceAll(RegExp(r'/+$'), '');
+    baseUrl = sanitizeUrl(url);
   }
 
   /// Helper untuk menghasilkan URL gambar lengkap dari avatar pengguna
-  /// (mendukung URL eksternal http/https dan path server lokal seperti public/uploads/...)
   static String getFullAvatarUrl(String? avatar) {
     if (avatar == null || avatar.trim().isEmpty) return '';
     final trimmed = avatar.trim();
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
       return trimmed;
     }
-    // Hapus suffix '/api' dari baseUrl untuk mendapatkan root URL aplikasi
     final rootUrl = baseUrl.replaceAll(RegExp(r'/api/?$'), '');
     final cleanPath = trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
     return '$rootUrl/$cleanPath';
   }
 
-  // Daftar kandidat URL server untuk auto-fallback
-  static List<String> get _candidateUrls {
-    final list = <String>[baseUrl];
+  /// Tes apakah suatu URL server merespon API dengan status 200
+  static Future<bool> testServer(String candidateUrl, {int timeoutMs = 1200}) async {
+    try {
+      final clean = sanitizeUrl(candidateUrl);
+      final uri = Uri.parse('$clean/');
+      final res = await http.get(
+        uri,
+        headers: {'Accept': 'application/json'},
+      ).timeout(Duration(milliseconds: timeoutMs));
+
+      if (res.statusCode == 200) {
+        final body = utf8.decode(res.bodyBytes);
+        if (body.contains('status') || body.contains('Karangmoncol') || body.contains('API Ready') || body.contains('endpoints')) {
+          return true;
+        }
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  /// Kumpulkan kandidat IP lokal cerdas dari interface Wi-Fi / Hotspot perangkat
+  static Future<List<String>> getSmartCandidateUrls() async {
+    final Set<String> candidates = {
+      baseUrl,
+      'http://192.168.18.6/aplikasi-simulasi-main1/api',
+      'http://192.168.18.6/Aplikasi-Simulasi-main1/api',
+      'http://192.168.18.6/aplikasi-simulasi/api',
+      'http://localhost:8080/aplikasi-simulasi-main1/api',
+      'http://localhost:8080/aplikasi-simulasi/api',
+      'http://127.0.0.1:8080/aplikasi-simulasi-main1/api',
+      'http://127.0.0.1:8080/aplikasi-simulasi/api',
+      'http://192.168.43.1/aplikasi-simulasi-main1/api',
+      'http://192.168.43.1/aplikasi-simulasi/api', // Hotspot HP umum
+      'http://10.0.2.2/aplikasi-simulasi/api',     // Android Emulator
+      'http://localhost/aplikasi-simulasi-main1/api',
+      'http://localhost/aplikasi-simulasi/api',
+      'http://192.168.1.8/aplikasi-simulasi/api',
+      'http://192.168.0.193/aplikasi-simulasi/api',
+    };
+
+    final Set<String> discoveredSubnets = {
+      '192.168.18.',
+      '192.168.1.',
+      '192.168.0.',
+      '192.168.43.',
+    };
+
     if (!kIsWeb) {
       try {
-        if (defaultTargetPlatform == TargetPlatform.android) {
-          const candidates = [
-            'http://192.168.1.8/aplikasi-simulasi/api',
-            'http://192.168.0.193/aplikasi-simulasi/api',
-            'http://10.0.2.2/aplikasi-simulasi/api',
-            'http://10.0.2.2:8000/api',
-            'http://10.0.2.2:8000/aplikasi-simulasi/api',
-            'http://192.168.11.207/aplikasi-simulasi/api',
-          ];
-          for (final c in candidates) {
-            if (!list.contains(c)) list.add(c);
+        final interfaces = await io.NetworkInterface.list(
+          type: io.InternetAddressType.IPv4,
+          includeLoopback: false,
+        );
+
+        for (final iface in interfaces) {
+          for (final addr in iface.addresses) {
+            final ip = addr.address;
+            final lastDot = ip.lastIndexOf('.');
+            if (lastDot != -1) {
+              discoveredSubnets.add(ip.substring(0, lastDot + 1));
+            }
           }
         }
       } catch (_) {}
     }
-    const fallback = [
-      'http://localhost/aplikasi-simulasi/api',
-      'http://127.0.0.1:8000/api',
-      'http://localhost:8000/api',
-    ];
-    for (final c in fallback) {
-      if (!list.contains(c)) list.add(c);
+
+    // Bangun daftar target IP untuk setiap subnet secara otomatis
+    for (final subnet in discoveredSubnets) {
+      final hostOctets = [1, 6, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 15, 20, 100, 101, 102];
+      for (final octet in hostOctets) {
+        for (final folder in _knownAppPaths) {
+          candidates.add('http://$subnet$octet/$folder/api');
+        }
+      }
     }
-    return list;
+
+    return candidates.map(sanitizeUrl).toList();
   }
 
-  // Helper HTTP POST dengan auto-discovery server
+  /// Pindai dan temukan server API secara otomatis tanpa perlu setting manual (Fast Parallel Race)
+  static Future<String?> autoDiscoverServer({bool force = false}) async {
+    if (_isDiscovering && _discoveryCompleter != null) {
+      return _discoveryCompleter!.future;
+    }
+
+    // Jika baseUrl saat ini sudah merespon dan tidak dipaksa re-scan, gunakan langsung
+    if (!force) {
+      final isCurrentOk = await testServer(baseUrl, timeoutMs: 600);
+      if (isCurrentOk) return baseUrl;
+    }
+
+    _isDiscovering = true;
+    _discoveryCompleter = Completer<String?>();
+
+    try {
+      final allCandidates = await getSmartCandidateUrls();
+
+      // Cek prioritas pertama secara paralel super cepat (IP laptop teman/personal, hotspot, emulator)
+      final priority = [
+        'http://192.168.18.6/aplikasi-simulasi-main1/api',
+        'http://192.168.18.6/Aplikasi-Simulasi-main1/api',
+        'http://192.168.18.6/aplikasi-simulasi/api',
+        'http://localhost:8080/aplikasi-simulasi-main1/api',
+        'http://localhost:8080/aplikasi-simulasi/api',
+        'http://192.168.43.1/aplikasi-simulasi-main1/api',
+        'http://192.168.43.1/aplikasi-simulasi/api',
+        'http://10.0.2.2/aplikasi-simulasi/api',
+        'http://localhost/aplikasi-simulasi-main1/api',
+        'http://localhost/aplikasi-simulasi/api',
+      ].map(sanitizeUrl).toList();
+
+      final priorityCompleter = Completer<String?>();
+      int pPending = priority.length;
+      for (final pUrl in priority) {
+        testServer(pUrl, timeoutMs: 800).then((ok) {
+          if (ok && !priorityCompleter.isCompleted) {
+            priorityCompleter.complete(pUrl);
+          } else {
+            pPending--;
+            if (pPending <= 0 && !priorityCompleter.isCompleted) {
+              priorityCompleter.complete(null);
+            }
+          }
+        }).catchError((_) {
+          pPending--;
+          if (pPending <= 0 && !priorityCompleter.isCompleted) {
+            priorityCompleter.complete(null);
+          }
+        });
+      }
+
+      final pFound = await priorityCompleter.future.timeout(
+        const Duration(milliseconds: 900),
+        onTimeout: () => null,
+      );
+
+      if (pFound != null) {
+        baseUrl = pFound;
+        _isDiscovering = false;
+        _discoveryCompleter?.complete(pFound);
+        return pFound;
+      }
+
+      // Jika belum ditemukan di prioritas, lakukan race paralel pada seluruh kandidat
+      final raceCompleter = Completer<String?>();
+      final remaining = allCandidates.where((u) => !priority.contains(u)).toList();
+      int rPending = remaining.length;
+
+      for (final rUrl in remaining) {
+        testServer(rUrl, timeoutMs: 1200).then((ok) {
+          if (ok && !raceCompleter.isCompleted) {
+            raceCompleter.complete(rUrl);
+          } else {
+            rPending--;
+            if (rPending <= 0 && !raceCompleter.isCompleted) {
+              raceCompleter.complete(null);
+            }
+          }
+        }).catchError((_) {
+          rPending--;
+          if (rPending <= 0 && !raceCompleter.isCompleted) {
+            raceCompleter.complete(null);
+          }
+        });
+      }
+
+      final rFound = await raceCompleter.future.timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => null,
+      );
+
+      if (rFound != null) {
+        baseUrl = rFound;
+        _isDiscovering = false;
+        _discoveryCompleter?.complete(rFound);
+        return rFound;
+      }
+    } catch (_) {}
+
+    _isDiscovering = false;
+    _discoveryCompleter?.complete(null);
+    return null;
+  }
+
+  // Helper HTTP POST dengan auto-fallback folder dan auto-discovery otomatis
   static Future<Map<String, dynamic>> post(String endpoint, Map<String, dynamic> body) async {
-    final candidates = _candidateUrls;
-    String lastError = '';
+    baseUrl = sanitizeUrl(baseUrl);
+    final candidates = [baseUrl, ...getAlternateFolderUrls(baseUrl)];
 
     for (final candidate in candidates) {
       try {
@@ -86,27 +308,45 @@ class ApiService {
           body: jsonEncode(body),
         ).timeout(const Duration(seconds: 4));
 
-        final responseBody = utf8.decode(response.bodyBytes);
-        final decoded = jsonDecode(responseBody) as Map<String, dynamic>;
+        if (response.statusCode == 200) {
+          final responseBody = utf8.decode(response.bodyBytes);
+          final decoded = jsonDecode(responseBody) as Map<String, dynamic>;
+          baseUrl = candidate; // Server aktif terverifikasi!
+          return decoded;
+        }
+      } catch (_) {}
+    }
 
-        // Sukses tersambung, set baseUrl ke server yang aktif ini
-        baseUrl = candidate;
-        return decoded;
-      } catch (e) {
-        lastError = '$e';
-      }
+    // Jika seluruh folder di IP tersebut gagal, lakukan scan otomatis ke seluruh jaringan
+    final found = await autoDiscoverServer(force: true);
+    if (found != null && found != baseUrl) {
+      baseUrl = found;
+      try {
+        final retryUri = Uri.parse('$baseUrl$endpoint');
+        final retryRes = await http.post(
+          retryUri,
+          headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Accept': 'application/json',
+          },
+          body: jsonEncode(body),
+        ).timeout(const Duration(seconds: 5));
+
+        final retryBody = utf8.decode(retryRes.bodyBytes);
+        return jsonDecode(retryBody) as Map<String, dynamic>;
+      } catch (_) {}
     }
 
     return {
       'status': 'error',
-      'message': 'Gagal menghubungi server ($baseUrl). Pastikan Apache/PHP & MySQL menyala! ($lastError)'
+      'message': 'Gagal menghubungi server ($baseUrl). Pastikan Apache XAMPP menyala dan Port 80 tidak diblokir Firewall!'
     };
   }
 
-  // Helper HTTP GET dengan auto-discovery server
+  // Helper HTTP GET dengan auto-fallback folder dan auto-discovery otomatis
   static Future<Map<String, dynamic>> get(String endpoint) async {
-    final candidates = _candidateUrls;
-    String lastError = '';
+    baseUrl = sanitizeUrl(baseUrl);
+    final candidates = [baseUrl, ...getAlternateFolderUrls(baseUrl)];
 
     for (final candidate in candidates) {
       try {
@@ -118,19 +358,33 @@ class ApiService {
           },
         ).timeout(const Duration(seconds: 4));
 
-        final responseBody = utf8.decode(response.bodyBytes);
-        final decoded = jsonDecode(responseBody) as Map<String, dynamic>;
+        if (response.statusCode == 200) {
+          final responseBody = utf8.decode(response.bodyBytes);
+          final decoded = jsonDecode(responseBody) as Map<String, dynamic>;
+          baseUrl = candidate;
+          return decoded;
+        }
+      } catch (_) {}
+    }
 
-        baseUrl = candidate;
-        return decoded;
-      } catch (e) {
-        lastError = '$e';
-      }
+    final found = await autoDiscoverServer(force: true);
+    if (found != null && found != baseUrl) {
+      baseUrl = found;
+      try {
+        final retryUri = Uri.parse('$baseUrl$endpoint');
+        final retryRes = await http.get(
+          retryUri,
+          headers: {'Accept': 'application/json'},
+        ).timeout(const Duration(seconds: 5));
+
+        final retryBody = utf8.decode(retryRes.bodyBytes);
+        return jsonDecode(retryBody) as Map<String, dynamic>;
+      } catch (_) {}
     }
 
     return {
       'status': 'error',
-      'message': 'Gagal menghubungi server ($baseUrl). ($lastError)'
+      'message': 'Gagal menghubungi server ($baseUrl).'
     };
   }
 

@@ -22,6 +22,11 @@
             <p class="text-xs text-slate-500 mt-0.5">SMP NEGERI 1 KARANGMONCOL • Ubah parameter durasi ujian, standar KKM passing grade, dan status publikasi soal.</p>
         </div>
         <div class="flex items-center gap-2">
+            <button type="button"
+                onclick="confirmDelete('<?= base_url('guru/kuis/delete/' . $kuis['id']) ?>', 'Hapus Paket Kuis?', 'Apakah Anda yakin ingin menghapus paket kuis &quot;<?= htmlspecialchars(addslashes($kuis['judul'])) ?>&quot;? Seluruh butir soal dan riwayat nilai siswa pada kuis ini akan ikut terhapus.')"
+                class="px-3.5 py-2 bg-white hover:bg-rose-50 border border-rose-200 text-rose-600 rounded-xl text-xs font-medium transition shadow-sm flex items-center gap-1.5">
+                <i class="fas fa-trash-alt text-[10px]"></i> Hapus Kuis
+            </button>
             <a href="<?= base_url('guru/kuis/detail/' . $kuis['id']) ?>" class="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-medium transition shadow-sm">
                 Batal
             </a>

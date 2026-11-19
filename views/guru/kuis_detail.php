@@ -8,6 +8,11 @@
             <a href="<?= base_url('guru/kuis/edit/' . $kuis['id']) ?>" class="px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-medium transition shadow-sm flex items-center gap-1.5">
                 <i class="fas fa-pencil-alt text-[10px]"></i> Edit Pengaturan Kuis
             </a>
+            <button type="button"
+                onclick="confirmDelete('<?= base_url('guru/kuis/delete/' . $kuis['id']) ?>', 'Hapus Paket Kuis?', 'Apakah Anda yakin ingin menghapus paket kuis &quot;<?= htmlspecialchars(addslashes($kuis['judul'])) ?>&quot;? Seluruh butir soal dan riwayat nilai siswa pada kuis ini akan ikut terhapus.')"
+                class="px-3.5 py-1.5 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-xl text-xs font-medium transition shadow-sm flex items-center gap-1.5">
+                <i class="fas fa-trash-alt text-[10px]"></i> Hapus Kuis
+            </button>
         </div>
     </div>
 
@@ -60,9 +65,17 @@
                         <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
                             <div class="flex items-start justify-between">
                                 <span class="font-bold text-xs text-slate-900">#<?= $i + 1 ?></span>
-                                <span class="px-2 py-0.5 bg-emerald-50 text-emerald-800 text-[10px] font-semibold rounded border border-emerald-200/60">
-                                    Kunci: Pilihan <?= $s['jawaban_benar'] ?>
-                                </span>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-0.5 bg-emerald-50 text-emerald-800 text-[10px] font-semibold rounded border border-emerald-200/60">
+                                        Kunci: Pilihan <?= $s['jawaban_benar'] ?>
+                                    </span>
+                                    <button type="button"
+                                        onclick="confirmDelete('<?= base_url('guru/soal/delete/' . $s['id']) ?>', 'Hapus Butir Soal?', 'Apakah Anda yakin ingin menghapus butir soal #<?= $i + 1 ?> ini?')"
+                                        class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition text-xs"
+                                        title="Hapus Butir Soal">
+                                        <i class="fas fa-trash-alt text-[10px]"></i>
+                                    </button>
+                                </div>
                             </div>
                             <p class="text-xs font-semibold text-slate-800"><?= htmlspecialchars($s['pertanyaan']) ?></p>
                             <div class="grid grid-cols-2 gap-1.5 text-[11px] text-slate-600 pt-1">
