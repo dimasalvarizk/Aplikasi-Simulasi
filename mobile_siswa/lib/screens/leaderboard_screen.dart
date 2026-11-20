@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/api_service.dart';
@@ -229,26 +228,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                       ),
                                     );
 
-                                    Widget avatarContent = fallbackInitial;
-                                    if (avatarUrl.isNotEmpty) {
-                                      try {
-                                        if (!avatarUrl.startsWith('http') && !avatarUrl.startsWith('public/') && File(avatarUrl).existsSync()) {
-                                          avatarContent = Image.file(
-                                            File(avatarUrl),
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) => fallbackInitial,
-                                          );
-                                        } else if (fullAv.isNotEmpty && fullAv.startsWith('http')) {
-                                          avatarContent = Image.network(
-                                            fullAv,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) => fallbackInitial,
-                                          );
-                                        }
-                                      } catch (_) {
-                                        avatarContent = fallbackInitial;
-                                      }
-                                    }
+                                    Widget avatarContent = ApiService.buildAvatarWidget(
+                                      avatarUrl,
+                                      width: 38,
+                                      height: 38,
+                                      fallback: fallbackInitial,
+                                    );
 
                                     return Container(
                                       width: 38,

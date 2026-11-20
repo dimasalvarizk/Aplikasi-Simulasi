@@ -145,18 +145,20 @@ class ApiService {
       );
     }
 
-    // 2. Cek apakah file lokal di disk komputer/HP
-    try {
-      if (!trimmed.startsWith('http') && !trimmed.startsWith('public/') && io.File(trimmed).existsSync()) {
-        return Image.file(
-          io.File(trimmed),
-          width: width,
-          height: height,
-          fit: fit,
-          errorBuilder: (_, __, ___) => defFallback,
-        );
-      }
-    } catch (_) {}
+    // 2. Cek apakah file lokal di disk komputer/HP (hanya untuk platform non-Web)
+    if (!kIsWeb) {
+      try {
+        if (!trimmed.startsWith('http') && !trimmed.startsWith('public/') && io.File(trimmed).existsSync()) {
+          return Image.file(
+            io.File(trimmed),
+            width: width,
+            height: height,
+            fit: fit,
+            errorBuilder: (_, __, ___) => defFallback,
+          );
+        }
+      } catch (_) {}
+    }
 
     // 3. Muat dari URL server atau external
     final fullUrl = getFullAvatarUrl(trimmed);
@@ -663,18 +665,17 @@ class ApiService {
     });
   }
 
-  // 18. Upload Avatar via File Path
-  static Future<Map<String, dynamic>> uploadAvatarFile(int userId, String filePath) async {
+  // 18. Upload Avatar via Uint8List Bytes (universal: Web, Windows, Android, iOS)
+  static Future<Map<String, dynamic>> uploadAvatarBytes(
+    int userId,
+    Uint8List bytes,
+    String filename,
+  ) async {
     try {
-      final file = io.File(filePath);
-      if (!await file.exists()) {
-        return {'status': 'error', 'message': 'File tidak ditemukan di jalur: $filePath'};
-      }
-      final bytes = await file.readAsBytes();
       if (bytes.length > 5 * 1024 * 1024) {
         return {'status': 'error', 'message': 'Ukuran file foto maksimal 5 MB.'};
       }
-      final ext = filePath.split('.').last.toLowerCase();
+      final ext = filename.split('.').last.toLowerCase();
       final allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
       if (!allowed.contains(ext)) {
         return {'status': 'error', 'message': 'Format berkas tidak didukung. Gunakan JPG, PNG, WEBP, atau GIF.'};
@@ -682,8 +683,26 @@ class ApiService {
       final mime = (ext == 'jpg' || ext == 'jpeg')
           ? 'image/jpeg'
           : (ext == 'png' ? 'image/png' : (ext == 'webp' ? 'image/webp' : 'image/gif'));
-      final base64Str = 'data:$mime;base64,' + base64Encode(bytes);
+      final base64Str = 'data:$mime;base64,${base64Encode(bytes)}';
       return await uploadAvatarBase64(userId, base64Str);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Gagal membaca berkas: $e'};
+    }
+  }
+
+  // 19. Upload Avatar via File Path (khusus platform non-Web)
+  static Future<Map<String, dynamic>> uploadAvatarFile(int userId, String filePath) async {
+    if (kIsWeb) {
+      return {'status': 'error', 'message': 'Unggah via path tidak didukung di Web. Gunakan uploadAvatarBytes.'};
+    }
+    try {
+      final file = io.File(filePath);
+      if (!await file.exists()) {
+        return {'status': 'error', 'message': 'File tidak ditemukan di jalur: $filePath'};
+      }
+      final bytes = await file.readAsBytes();
+      final filename = filePath.split(RegExp(r'[/\\]')).last;
+      return await uploadAvatarBytes(userId, bytes, filename);
     } catch (e) {
       return {'status': 'error', 'message': 'Gagal membaca berkas: $e'};
     }

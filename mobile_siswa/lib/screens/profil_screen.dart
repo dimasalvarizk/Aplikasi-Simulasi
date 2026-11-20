@@ -8,6 +8,13 @@ import '../models/user_model.dart';
 import '../services/api_service.dart';
 import 'login_screen.dart';
 
+class _PickedAvatar {
+  final String? path;
+  final String name;
+  final Uint8List bytes;
+  _PickedAvatar({this.path, required this.name, required this.bytes});
+}
+
 class ProfilScreen extends StatefulWidget {
   const ProfilScreen({Key? key}) : super(key: key);
 
@@ -100,9 +107,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
 
   Widget _buildAvatarWidget({double size = 52, double radius = 14}) {
     final avatarStr = globalUser.avatar.trim();
-    final fullUrl = ApiService.getFullAvatarUrl(avatarStr);
-
-    Widget fallbackInitial = Center(
+    final fallbackInitial = Center(
       child: Text(
         globalUser.nama.isNotEmpty ? globalUser.nama.substring(0, 1).toUpperCase() : 'S',
         style: TextStyle(
@@ -113,71 +118,18 @@ class _ProfilScreenState extends State<ProfilScreen> {
       ),
     );
 
-    if (avatarStr.isEmpty) {
-      return fallbackInitial;
-    }
-
-    // 1. Cek jika preset avatar karakter (bisa langsung dari asset lokal tanpa internet/server)
-    final fileName = avatarStr.split(RegExp(r'[/\\]')).last.trim();
-    if (RegExp(r'^avatar_[0-9]+\.(png|svg)$').hasMatch(fileName)) {
-      final pngAsset = 'assets/avatars/${fileName.replaceAll('.svg', '.png')}';
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(radius),
-        child: Image.asset(
-          pngAsset,
-          width: size,
-          height: size,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) {
-            if (fullUrl.isNotEmpty && fullUrl.startsWith('http')) {
-              return Image.network(
-                fullUrl,
-                width: size,
-                height: size,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => fallbackInitial,
-              );
-            }
-            return fallbackInitial;
-          },
-        ),
-      );
-    }
-
-    // 2. Periksa jika merupakan file foto lokal di disk komputer / HP
-    try {
-      if (!avatarStr.startsWith('http') && !avatarStr.startsWith('public/') && File(avatarStr).existsSync()) {
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(radius),
-          child: Image.file(
-            File(avatarStr),
-            width: size,
-            height: size,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => fallbackInitial,
-          ),
-        );
-      }
-    } catch (_) {}
-
-    // 3. Gambar dari server atau URL eksternal
-    if (fullUrl.isNotEmpty && fullUrl.startsWith('http')) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(radius),
-        child: Image.network(
-          fullUrl,
-          width: size,
-          height: size,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => fallbackInitial,
-        ),
-      );
-    }
-
-    return fallbackInitial;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: ApiService.buildAvatarWidget(
+        avatarStr,
+        width: size,
+        height: size,
+        fallback: fallbackInitial,
+      ),
+    );
   }
 
-  Future<String?> _pickImageFile() async {
+  Future<_PickedAvatar?> _pickImageFile() async {
     // 1. Khusus Desktop Windows: Gunakan FileSelector resmi Windows (native Explorer dialog)
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
       try {
@@ -186,8 +138,13 @@ class _ProfilScreenState extends State<ProfilScreen> {
           extensions: ['jpg', 'jpeg', 'png', 'webp'],
         );
         final file = await openFile(acceptedTypeGroups: [typeGroup]);
-        if (file != null && file.path.isNotEmpty) {
-          return file.path;
+        if (file != null) {
+          final bytes = await file.readAsBytes();
+          return _PickedAvatar(
+            path: file.path,
+            name: file.name,
+            bytes: bytes,
+          );
         }
       } catch (e) {
         debugPrint('FileSelector Windows error: $e');
@@ -219,7 +176,13 @@ $f.Dispose()
         ]);
         final path = res.stdout.toString().trim();
         if (path.isNotEmpty && File(path).existsSync()) {
-          return path;
+          final bytes = await File(path).readAsBytes();
+          final name = path.split(RegExp(r'[/\\]')).last;
+          return _PickedAvatar(
+            path: path,
+            name: name,
+            bytes: bytes,
+          );
         }
       } catch (e) {
         debugPrint('Windows OpenFileDialog error: $e');
@@ -227,7 +190,7 @@ $f.Dispose()
       return null;
     }
 
-    // 2. Di Android, iOS, atau Web: Gunakan ImagePicker resmi (buka galeri foto HP)
+    // 2. Di Android, iOS, atau Web: Gunakan ImagePicker resmi (buka galeri foto HP / file dialog)
     try {
       final picker = ImagePicker();
       final XFile? image = await picker.pickImage(
@@ -236,12 +199,20 @@ $f.Dispose()
         maxHeight: 1024,
         imageQuality: 85,
       );
-      if (image != null && image.path.isNotEmpty) {
-        return image.path;
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        return _PickedAvatar(
+          path: image.path,
+          name: image.name,
+          bytes: bytes,
+        );
       }
     } catch (e) {
       debugPrint('ImagePicker gallery error: $e');
     }
+
+    return null;
+  }
 
     return null;
   }
@@ -283,7 +254,7 @@ $f.Dispose()
   }
 
   void _showAvatarPickerBottomSheet() {
-    String? selectedFilePath;
+    _PickedAvatar? pickedAvatar;
     bool isUploading = false;
     String? uploadError;
 
@@ -294,8 +265,8 @@ $f.Dispose()
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) {
-          final fileSizeText = (selectedFilePath != null && File(selectedFilePath!).existsSync())
-              ? '${(File(selectedFilePath!).lengthSync() / 1024).toStringAsFixed(1)} KB'
+          final fileSizeText = pickedAvatar != null
+              ? '${(pickedAvatar!.bytes.length / 1024).toStringAsFixed(1)} KB'
               : '';
 
           return Container(
@@ -351,16 +322,16 @@ $f.Dispose()
                     ),
                     child: Column(
                       children: [
-                        if (selectedFilePath == null) ...[
+                        if (pickedAvatar == null) ...[
                           InkWell(
                             onTap: isUploading
                                 ? null
                                 : () async {
                                     try {
-                                      final path = await _pickImageFile();
-                                      if (path != null && path.isNotEmpty) {
+                                      final picked = await _pickImageFile();
+                                      if (picked != null) {
                                         setModalState(() {
-                                          selectedFilePath = path;
+                                          pickedAvatar = picked;
                                           uploadError = null;
                                         });
                                       }
@@ -409,8 +380,8 @@ $f.Dispose()
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
-                                  child: Image.file(
-                                    File(selectedFilePath!),
+                                  child: Image.memory(
+                                    pickedAvatar!.bytes,
                                     width: 48,
                                     height: 48,
                                     fit: BoxFit.cover,
@@ -428,7 +399,7 @@ $f.Dispose()
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        selectedFilePath!.split(Platform.isWindows ? r'\' : '/').last,
+                                        pickedAvatar!.name,
                                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -444,7 +415,7 @@ $f.Dispose()
                                 TextButton(
                                   onPressed: () {
                                     setModalState(() {
-                                      selectedFilePath = null;
+                                      pickedAvatar = null;
                                       uploadError = null;
                                     });
                                   },
@@ -483,7 +454,11 @@ $f.Dispose()
                                         uploadError = null;
                                       });
                                       try {
-                                        final res = await ApiService.uploadAvatarFile(globalUser.id, selectedFilePath!);
+                                        final res = await ApiService.uploadAvatarBytes(
+                                          globalUser.id,
+                                          pickedAvatar!.bytes,
+                                          pickedAvatar!.name,
+                                        );
                                         if (res['status'] == 'success') {
                                           final newUrl = res['data']?['avatar_url']?.toString() ?? res['data']?['avatar']?.toString() ?? '';
                                           if (mounted) {
