@@ -282,12 +282,21 @@ function seedInitialData(PDO $pdo): void {
     // Password default: password123
     $hashPass = password_hash('password123', PASSWORD_BCRYPT);
 
-    // 1. Users Guru / Pengelola Resmi
+    // 1. Users Guru / Pengelola Resmi & Akun Uji Siswa
     $stmt = $pdo->prepare("INSERT INTO users (nama, username, email, password, role, nip, kelas, nisn, is_active, avatar) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)");
     $stmt->execute(['Angzal Maolana, S.Pd', 'angzal', 'angzal@smpn1karangmoncol.sch.id', $hashPass, 'guru', '198703122014021001', null, null, 'public/img/avatars/avatar_8.png']);
     $stmt->execute(['Hana Sifakhatin, S.Pd', 'hana', 'hana@smpn1karangmoncol.sch.id', $hashPass, 'guru', '199008252015032002', null, null, 'public/img/avatars/avatar_2.png']);
+    $stmt->execute(['Ahmad Fauzi', 'siswa1', 'ahmad@simulasi.test', $hashPass, 'siswa', null, 'VII A', '0051234567', 'public/img/avatars/avatar_1.png']);
+    $stmt->execute(['Siti Rahmawati', 'siswa2', 'siti@simulasi.test', $hashPass, 'siswa', null, 'VII A', '0051234568', 'public/img/avatars/avatar_2.png']);
+    $stmt->execute(['Dimas Alva Rizki', 'dimas', 'dimas@simulasi.test', $hashPass, 'siswa', null, 'VII B', '0051234569', 'public/img/avatars/avatar_3.png']);
 
-    // 2. Master Badges Sistem
+    // 2. Gamifikasi awal untuk siswa
+    $stmtGamif = $pdo->prepare("INSERT INTO gamifikasi (user_id, total_xp, level, streak_days, last_activity) VALUES (?, ?, ?, ?, ?)");
+    $stmtGamif->execute([3, 450, 5, 7, date('Y-m-d')]);
+    $stmtGamif->execute([4, 720, 8, 12, date('Y-m-d')]);
+    $stmtGamif->execute([5, 345, 4, 3, date('Y-m-d')]);
+
+    // 3. Master Badges Sistem
     $badges = [
         ['pemula', 'Pemula Jaringan', 'Selamat datang! Kamu telah bergabung di media pembelajaran SMP Negeri 1 Karangmoncol.', '🌱', 10, 'level', 1],
         ['xp_100', 'Kolektor XP', 'Kumpulkan 100 XP pertamamu!', '⭐', 20, 'xp_total', 100],
