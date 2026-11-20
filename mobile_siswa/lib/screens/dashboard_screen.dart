@@ -351,14 +351,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
                       ),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
