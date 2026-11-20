@@ -209,13 +209,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         border: Border.all(color: const Color(0xFFCBD5E1), width: 1),
                       ),
                       clipBehavior: Clip.antiAlias,
-                      child: ApiService.getFullAvatarUrl(globalUser.avatar).isNotEmpty
-                          ? Image.network(
-                              ApiService.getFullAvatarUrl(globalUser.avatar),
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.person_outline, size: 18, color: Color(0xFF334155)),
-                            )
-                          : const Icon(Icons.person_outline, size: 18, color: Color(0xFF334155)),
+                      child: ApiService.buildAvatarWidget(
+                        globalUser.avatar,
+                        width: 28,
+                        height: 28,
+                        fallback: const Icon(Icons.person_outline, size: 18, color: Color(0xFF334155)),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 2),
@@ -336,24 +335,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ],
                         ),
                         clipBehavior: Clip.antiAlias,
-                        child: ApiService.getFullAvatarUrl(globalUser.avatar).isNotEmpty
-                            ? Image.network(
-                                ApiService.getFullAvatarUrl(globalUser.avatar),
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Center(
-                                  child: Text(
-                                    (globalUser.nama.isNotEmpty ? globalUser.nama[0] : 'S').toUpperCase(),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : Center(
-                                child: Text(
-                                  (globalUser.nama.isNotEmpty ? globalUser.nama[0] : 'S').toUpperCase(),
+                        child: ApiService.buildAvatarWidget(
+                          globalUser.avatar,
+                          width: 52,
+                          height: 52,
+                          fallback: Center(
+                            child: Text(
+                              (globalUser.nama.isNotEmpty ? globalUser.nama[0] : 'S').toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 20,

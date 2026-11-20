@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
@@ -19,7 +20,7 @@ class ApiService {
         }
       } catch (_) {}
     }
-    return 'http://localhost/aplikasi-simulasi/api';
+    return 'http://127.0.0.1/aplikasi-simulasi/api';
   }
 
   static final List<String> _knownAppPaths = [
@@ -105,6 +106,71 @@ class ApiService {
     final rootUrl = baseUrl.replaceAll(RegExp(r'/api/?$'), '');
     final cleanPath = trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
     return '$rootUrl/$cleanPath';
+  }
+
+  /// Widget cerdas penampil avatar: memprioritaskan asset lokal offline, file lokal, baru URL server
+  static Widget buildAvatarWidget(
+    String? avatar, {
+    double? width,
+    double? height,
+    BoxFit fit = BoxFit.cover,
+    Widget? fallback,
+  }) {
+    final defFallback = fallback ?? const Icon(Icons.person_outline, size: 20, color: Color(0xFF334155));
+    if (avatar == null || avatar.trim().isEmpty) return defFallback;
+    final trimmed = avatar.trim();
+
+    // 1. Cek apakah ini preset avatar karakter (bisa langsung dimuat dari asset lokal tanpa koneksi)
+    final fileName = trimmed.split(RegExp(r'[/\\]')).last.trim();
+    if (RegExp(r'^avatar_[0-9]+\.(png|svg)$').hasMatch(fileName)) {
+      final pngAsset = 'assets/avatars/${fileName.replaceAll('.svg', '.png')}';
+      return Image.asset(
+        pngAsset,
+        width: width,
+        height: height,
+        fit: fit,
+        errorBuilder: (_, __, ___) {
+          final fullUrl = getFullAvatarUrl(trimmed);
+          if (fullUrl.isNotEmpty && fullUrl.startsWith('http')) {
+            return Image.network(
+              fullUrl,
+              width: width,
+              height: height,
+              fit: fit,
+              errorBuilder: (_, __, ___) => defFallback,
+            );
+          }
+          return defFallback;
+        },
+      );
+    }
+
+    // 2. Cek apakah file lokal di disk komputer/HP
+    try {
+      if (!trimmed.startsWith('http') && !trimmed.startsWith('public/') && io.File(trimmed).existsSync()) {
+        return Image.file(
+          io.File(trimmed),
+          width: width,
+          height: height,
+          fit: fit,
+          errorBuilder: (_, __, ___) => defFallback,
+        );
+      }
+    } catch (_) {}
+
+    // 3. Muat dari URL server atau external
+    final fullUrl = getFullAvatarUrl(trimmed);
+    if (fullUrl.isNotEmpty && fullUrl.startsWith('http')) {
+      return Image.network(
+        fullUrl,
+        width: width,
+        height: height,
+        fit: fit,
+        errorBuilder: (_, __, ___) => defFallback,
+      );
+    }
+
+    return defFallback;
   }
 
   /// Tes apakah suatu URL server merespon API dengan status 200

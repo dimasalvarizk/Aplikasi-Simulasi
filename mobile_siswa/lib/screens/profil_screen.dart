@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_selector/file_selector.dart';
 import '../models/user_model.dart';
 import '../services/api_service.dart';
 import 'login_screen.dart';
@@ -116,27 +117,60 @@ class _ProfilScreenState extends State<ProfilScreen> {
       return fallbackInitial;
     }
 
-    // Periksa jika merupakan file lokal di disk komputer / perangkat
-    try {
-      if (!avatarStr.startsWith('http') && !avatarStr.startsWith('public/') && File(avatarStr).existsSync()) {
-        return Image.file(
-          File(avatarStr),
+    // 1. Cek jika preset avatar karakter (bisa langsung dari asset lokal tanpa internet/server)
+    final fileName = avatarStr.split(RegExp(r'[/\\]')).last.trim();
+    if (RegExp(r'^avatar_[0-9]+\.(png|svg)$').hasMatch(fileName)) {
+      final pngAsset = 'assets/avatars/${fileName.replaceAll('.svg', '.png')}';
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: Image.asset(
+          pngAsset,
           width: size,
           height: size,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => fallbackInitial,
+          errorBuilder: (_, __, ___) {
+            if (fullUrl.isNotEmpty && fullUrl.startsWith('http')) {
+              return Image.network(
+                fullUrl,
+                width: size,
+                height: size,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => fallbackInitial,
+              );
+            }
+            return fallbackInitial;
+          },
+        ),
+      );
+    }
+
+    // 2. Periksa jika merupakan file foto lokal di disk komputer / HP
+    try {
+      if (!avatarStr.startsWith('http') && !avatarStr.startsWith('public/') && File(avatarStr).existsSync()) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(radius),
+          child: Image.file(
+            File(avatarStr),
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => fallbackInitial,
+          ),
         );
       }
     } catch (_) {}
 
-    // Gambar dari server atau URL eksternal
+    // 3. Gambar dari server atau URL eksternal
     if (fullUrl.isNotEmpty && fullUrl.startsWith('http')) {
-      return Image.network(
-        fullUrl,
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => fallbackInitial,
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: Image.network(
+          fullUrl,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => fallbackInitial,
+        ),
       );
     }
 
@@ -144,7 +178,56 @@ class _ProfilScreenState extends State<ProfilScreen> {
   }
 
   Future<String?> _pickImageFile() async {
-    // 1. Prioritas utama: ImagePicker resmi (Android, iOS, Web)
+    // 1. Khusus Desktop Windows: Gunakan FileSelector resmi Windows (native Explorer dialog)
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
+      try {
+        const typeGroup = XTypeGroup(
+          label: 'File Foto',
+          extensions: ['jpg', 'jpeg', 'png', 'webp'],
+        );
+        final file = await openFile(acceptedTypeGroups: [typeGroup]);
+        if (file != null && file.path.isNotEmpty) {
+          return file.path;
+        }
+      } catch (e) {
+        debugPrint('FileSelector Windows error: $e');
+      }
+
+      // Fallback sekunder OpenFileDialog jika diperlukan
+      try {
+        const psScript = r'''
+Add-Type -AssemblyName System.Windows.Forms
+$d = New-Object System.Windows.Forms.OpenFileDialog
+$d.Title = "Pilih Foto Profil"
+$d.Filter = "File Gambar (*.jpg;*.jpeg;*.png;*.webp)|*.jpg;*.jpeg;*.png;*.webp"
+$d.RestoreDirectory = $true
+$f = New-Object System.Windows.Forms.Form
+$f.TopMost = $true
+if ($d.ShowDialog($f) -eq [System.Windows.Forms.DialogResult]::OK) {
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    [Console]::Out.Write($d.FileName)
+}
+$f.Dispose()
+''';
+        final res = await Process.run('powershell', [
+          '-STA',
+          '-NoProfile',
+          '-ExecutionPolicy',
+          'Bypass',
+          '-Command',
+          psScript,
+        ]);
+        final path = res.stdout.toString().trim();
+        if (path.isNotEmpty && File(path).existsSync()) {
+          return path;
+        }
+      } catch (e) {
+        debugPrint('Windows OpenFileDialog error: $e');
+      }
+      return null;
+    }
+
+    // 2. Di Android, iOS, atau Web: Gunakan ImagePicker resmi (buka galeri foto HP)
     try {
       final picker = ImagePicker();
       final XFile? image = await picker.pickImage(
@@ -160,88 +243,49 @@ class _ProfilScreenState extends State<ProfilScreen> {
       debugPrint('ImagePicker gallery error: $e');
     }
 
-    // 2. Fallback sekunder khusus Windows Desktop
-    try {
-      if (!kIsWeb && Platform.isWindows) {
-        const psScript = r'''
-Add-Type -AssemblyName System.Windows.Forms
-$d = New-Object System.Windows.Forms.OpenFileDialog
-$d.Title = "Pilih Foto Profil"
-$d.Filter = "File Gambar (*.jpg;*.jpeg;*.png;*.webp)|*.jpg;*.jpeg;*.png;*.webp"
-$d.RestoreDirectory = $true
-if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
-    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-    [Console]::Out.Write($d.FileName)
-}
-''';
-        final res = await Process.run('powershell', [
-          '-STA',
-          '-NoProfile',
-          '-ExecutionPolicy',
-          'Bypass',
-          '-Command',
-          psScript,
-        ]);
-        final path = res.stdout.toString().trim();
-        if (path.isNotEmpty && File(path).existsSync()) {
-          return path;
-        }
-      }
-    } catch (e) {
-      debugPrint('Error picking file via Windows dialog: $e');
-    }
     return null;
   }
 
   Future<void> _updateAvatarPreset(String filename) async {
+    final avatarPath = 'public/img/avatars/$filename';
+
+    // 1. Perbarui state lokal secara instan agar UI berganti tanpa jeda
+    setState(() {
+      globalUser.updateAvatar(avatarPath);
+    });
+
+    if (mounted) {
+      Navigator.pop(context); // Tutup modal pemilihan
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Foto profil avatar karakter berhasil diterapkan!'),
+          backgroundColor: Color(0xFF16A34A),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+
+    // 2. Sinkronkan pembaruan ke database server
     try {
       final res = await ApiService.updateAvatar(globalUser.id, presetAvatar: filename);
       if (res['status'] == 'success') {
-        final newUrl = res['data']?['avatar_url']?.toString() ?? res['data']?['avatar']?.toString() ?? filename;
-        setState(() {
-          globalUser.updateAvatar(newUrl);
-        });
+        final newUrl = res['data']?['avatar_url']?.toString() ?? res['data']?['avatar']?.toString() ?? avatarPath;
         if (mounted) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Foto profil avatar berhasil diperbarui!'),
-              backgroundColor: Color(0xFF16A34A),
-              duration: Duration(seconds: 2),
-            ),
-          );
+          setState(() {
+            globalUser.updateAvatar(newUrl);
+          });
           _loadProfil();
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(res['message'] ?? 'Gagal memperbarui avatar. Periksa koneksi ke server.'),
-              backgroundColor: const Color(0xFFDC2626),
-            ),
-          );
         }
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Koneksi gagal: $e. Pastikan HP dan server laptop terhubung.'),
-            backgroundColor: const Color(0xFFDC2626),
-          ),
-        );
-      }
+      debugPrint('Sinkronisasi avatar ke server tertunda: $e');
     }
   }
 
   void _showAvatarPickerBottomSheet() {
-    final urlController = TextEditingController();
-    final pathController = TextEditingController();
     String? selectedFilePath;
     bool isUploading = false;
-    bool isApplyingUrl = false;
     String? uploadError;
-    String? urlError;
 
     showModalBottomSheet(
       context: context,
@@ -531,15 +575,21 @@ if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  presetPngUrl,
-                                  width: 34,
-                                  height: 34,
+                                child: Image.asset(
+                                  'assets/avatars/${item['file']}',
+                                  width: 36,
+                                  height: 36,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Text(item['icon'] ?? '🧑‍💻', style: const TextStyle(fontSize: 26)),
+                                  errorBuilder: (_, __, ___) => Image.network(
+                                    presetPngUrl,
+                                    width: 36,
+                                    height: 36,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Text(item['icon'] ?? '🧑‍💻', style: const TextStyle(fontSize: 26)),
+                                  ),
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 5),
                               Text(
                                 item['nama'] ?? '',
                                 textAlign: TextAlign.center,
@@ -553,117 +603,6 @@ if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                       );
                     },
                   ),
-
-                  const SizedBox(height: 18),
-                  Row(
-                    children: const [
-                      Expanded(child: Divider(color: Color(0xFFE2E8F0))),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 10),
-                        child: Text('ATAU URL GAMBAR ONLINE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF94A3B8))),
-                      ),
-                      Expanded(child: Divider(color: Color(0xFFE2E8F0))),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // ==========================================
-                  // 3. BAGIAN URL GAMBAR ONLINE
-                  // ==========================================
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: urlController,
-                          decoration: InputDecoration(
-                            hintText: 'https://domain.com/foto.jpg',
-                            hintStyle: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                            filled: true,
-                            fillColor: const Color(0xFFF8FAFC),
-                          ),
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0F172A),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        ),
-                        onPressed: (isUploading || isApplyingUrl)
-                            ? null
-                            : () async {
-                                String rawUrl = urlController.text.trim();
-                                if (rawUrl.isEmpty) {
-                                  setModalState(() {
-                                    urlError = 'Silakan ketik atau tempel link URL foto terlebih dahulu.';
-                                  });
-                                  return;
-                                }
-
-                                if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
-                                  rawUrl = 'https://$rawUrl';
-                                }
-
-                                setModalState(() {
-                                  isApplyingUrl = true;
-                                  urlError = null;
-                                });
-
-                                try {
-                                  final res = await ApiService.updateAvatar(globalUser.id, avatarUrl: rawUrl);
-                                  if (res['status'] == 'success') {
-                                    final newUrl = res['data']?['avatar_url']?.toString() ?? res['data']?['avatar']?.toString() ?? rawUrl;
-                                    if (mounted) {
-                                      setState(() {
-                                        globalUser.updateAvatar(newUrl);
-                                      });
-                                      Navigator.pop(ctx);
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Foto profil dari URL berhasil diterapkan!'),
-                                          backgroundColor: Color(0xFF16A34A),
-                                          duration: Duration(seconds: 3),
-                                        ),
-                                      );
-                                      _loadProfil();
-                                    }
-                                  } else {
-                                    setModalState(() {
-                                      urlError = res['message'] ?? 'Gagal memperbarui foto dari URL.';
-                                    });
-                                  }
-                                } catch (e) {
-                                  setModalState(() {
-                                    urlError = 'Gagal menerapkan URL: $e';
-                                  });
-                                } finally {
-                                  setModalState(() {
-                                    isApplyingUrl = false;
-                                  });
-                                }
-                              },
-                        child: isApplyingUrl
-                            ? const SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                              )
-                            : const Text('Terapkan', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
-                      ),
-                    ],
-                  ),
-                  if (urlError != null) ...[
-                    const SizedBox(height: 10),
-                    Text(
-                      urlError!,
-                      style: const TextStyle(color: Color(0xFFDC2626), fontSize: 11, fontWeight: FontWeight.w500),
-                    ),
-                  ],
                 ],
               ),
             ),
