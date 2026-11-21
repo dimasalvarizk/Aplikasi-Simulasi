@@ -379,6 +379,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                    class="flex items-center px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors">
                                     <i class="fas fa-user-circle w-4 mr-2.5 text-slate-400"></i> Profil Saya
                                 </a>
+                                <a href="<?= base_url($isGuru ? 'guru/profil#ganti-sandi' : 'siswa/profil') ?>"
+                                   class="flex items-center px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                                    <i class="fas fa-key w-4 mr-2.5 text-amber-500"></i> Ganti Kata Sandi
+                                </a>
                                 <div class="border-t border-slate-100 my-1"></div>
                                 <a href="<?= base_url('auth/logout') ?>"
                                    @click.prevent="confirmLogout"

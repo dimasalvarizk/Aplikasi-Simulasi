@@ -216,6 +216,9 @@ if ($segment0 === 'guru') {
     } elseif ($action === 'profil') {
         $ctrl->profil();
         exit;
+    } elseif ($action === 'ganti-password' || $action === 'ganti_password') {
+        $ctrl->gantiPassword();
+        exit;
     }
 
     // Direct method calls

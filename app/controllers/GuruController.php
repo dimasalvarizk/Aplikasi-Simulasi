@@ -87,6 +87,7 @@ class GuruController
 
         render('guru/dashboard', [
             'title'             => 'Dashboard Guru - SMP Negeri 1 Karangmoncol',
+            'currentPage'       => 'dashboard',
             'totalSiswa'        => $totalSiswa,
             'totalModul'        => $totalModul,
             'totalKuis'         => $totalKuis,
@@ -97,6 +98,7 @@ class GuruController
             'siswaAktif'        => $siswaAktif,
             'kuisTerbaru'       => $kuisTerbaru,
             'riwayatAktivitas'  => $riwayatAktivitas,
+            'csrf_token'        => generateToken(),
             'flash'             => ['success' => getFlash('success'), 'error' => getFlash('error')],
         ]);
     }
@@ -1988,10 +1990,69 @@ class GuruController
         $guru = $stmt->fetch();
 
         render('guru/profil', [
-            'title' => 'Profil Pengajar - SMP Negeri 1 Karangmoncol',
-            'guru'  => $guru,
-            'flash' => ['success' => getFlash('success'), 'error' => getFlash('error')],
+            'title'       => 'Profil Pengajar - SMP Negeri 1 Karangmoncol',
+            'currentPage' => 'profil',
+            'guru'        => $guru,
+            'csrf_token'  => generateToken(),
+            'flash'       => ['success' => getFlash('success'), 'error' => getFlash('error')],
         ]);
+    }
+
+    public function gantiPassword()
+    {
+        requireRole('guru');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirect(base_url('guru/dashboard'));
+        }
+
+        if (!verifyToken($_POST['csrf_token'] ?? '')) {
+            setFlash('error', 'Token keamanan tidak valid.');
+            redirect($_SERVER['HTTP_REFERER'] ?? base_url('guru/dashboard'));
+        }
+
+        $userId = (int)(getUser()['id'] ?? getUser()['user_id']);
+        $passwordLama       = (string)($_POST['password_lama'] ?? '');
+        $passwordBaru       = (string)($_POST['password_baru'] ?? '');
+        $konfirmasiPassword = (string)($_POST['konfirmasi_password'] ?? '');
+
+        if (empty($passwordLama) || empty($passwordBaru) || empty($konfirmasiPassword)) {
+            setFlash('error', 'Semua kolom kata sandi wajib diisi.');
+            redirect($_SERVER['HTTP_REFERER'] ?? base_url('guru/dashboard'));
+        }
+
+        if (strlen($passwordBaru) < 6) {
+            setFlash('error', 'Kata sandi baru minimal harus 6 karakter.');
+            redirect($_SERVER['HTTP_REFERER'] ?? base_url('guru/dashboard'));
+        }
+
+        if ($passwordBaru !== $konfirmasiPassword) {
+            setFlash('error', 'Konfirmasi kata sandi baru tidak sesuai.');
+            redirect($_SERVER['HTTP_REFERER'] ?? base_url('guru/dashboard'));
+        }
+
+        // Ambil data user guru terkini
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $guru = $stmt->fetch();
+
+        if (!$guru) {
+            setFlash('error', 'Akun pengajar tidak ditemukan.');
+            redirect(base_url('login'));
+        }
+
+        // Verifikasi kata sandi lama
+        if (!verifyPassword($passwordLama, $guru['password'])) {
+            setFlash('error', 'Kata sandi saat ini (lama) yang Anda masukkan salah.');
+            redirect($_SERVER['HTTP_REFERER'] ?? base_url('guru/dashboard'));
+        }
+
+        // Simpan hash kata sandi baru
+        $newHash = hashPassword($passwordBaru);
+        $update = $this->db->prepare("UPDATE users SET password = ?, updated_at = NOW() WHERE id = ?");
+        $update->execute([$newHash, $userId]);
+
+        setFlash('success', 'Kata sandi akun pengajar Anda berhasil diperbarui.');
+        redirect($_SERVER['HTTP_REFERER'] ?? base_url('guru/dashboard'));
     }
 
     // =========================================================

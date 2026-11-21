@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<div class="space-y-6" x-data="{ showGantiSandiModal: false, showOld: false, showNew: false, showConfirm: false }" @keydown.escape.window="showGantiSandiModal = false">
     <!-- Header Greeting with School Identity -->
     <div class="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-sm">
         <div>
@@ -25,6 +25,9 @@
             <a href="<?= base_url('guru/kuis/create') ?>" class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 font-medium rounded-xl text-xs border border-slate-200 transition flex items-center gap-1.5 shadow-sm">
                 <i class="fas fa-file-alt text-[10px]"></i> Buat Kuis
             </a>
+            <button type="button" @click="showGantiSandiModal = true" class="px-3.5 py-2 bg-white hover:bg-amber-50 text-amber-700 font-semibold rounded-xl text-xs border border-amber-200 transition flex items-center gap-1.5 shadow-sm" title="Ganti Kata Sandi Akun Pengajar">
+                <i class="fas fa-key text-[10px]"></i> Ganti Sandi
+            </button>
         </div>
     </div>
 
@@ -307,6 +310,105 @@
                 <a href="<?= base_url('guru/laporan') ?>" class="w-full py-2 px-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl text-center text-xs transition flex items-center justify-center gap-2 shadow-sm">
                     <i class="fas fa-file-excel text-emerald-600"></i> Unduh Rekap Nilai Siswa (CSV/Excel)
                 </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ganti Kata Sandi Guru -->
+    <div x-show="showGantiSandiModal" x-cloak
+         class="fixed inset-0 z-50 overflow-y-auto"
+         aria-labelledby="modal-ganti-sandi-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div x-show="showGantiSandiModal"
+                 x-transition:enter="ease-out duration-200"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-150"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 @click="showGantiSandiModal = false"
+                 class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div x-show="showGantiSandiModal"
+                 x-transition:enter="ease-out duration-200"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-150"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 class="relative inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
+                
+                <form action="<?= base_url('guru/ganti-password') ?>" method="POST">
+                    <input type="hidden" name="csrf_token" value="<?= $csrf_token ?? generateToken() ?>">
+
+                    <div class="p-6 space-y-4">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200">
+                                    <i class="fas fa-key text-sm"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-900" id="modal-ganti-sandi-title">Ganti Kata Sandi Guru</h3>
+                                    <p class="text-[11px] text-slate-500">Perbarui kata sandi login portal pengajar</p>
+                                </div>
+                            </div>
+                            <button type="button" @click="showGantiSandiModal = false" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition">
+                                <i class="fas fa-times text-xs"></i>
+                            </button>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Kata Sandi Saat Ini (Lama) <span class="text-rose-500">*</span></label>
+                            <div class="relative">
+                                <input :type="showOld ? 'text' : 'password'" name="password_lama" required placeholder="Masukkan kata sandi saat ini"
+                                    class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 pr-10 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:bg-white transition">
+                                <button type="button" @click="showOld = !showOld" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">
+                                    <i :class="showOld ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Kata Sandi Baru <span class="text-rose-500">*</span></label>
+                            <div class="relative">
+                                <input :type="showNew ? 'text' : 'password'" name="password_baru" required minlength="6" placeholder="Minimal 6 karakter"
+                                    class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 pr-10 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:bg-white transition">
+                                <button type="button" @click="showNew = !showNew" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">
+                                    <i :class="showNew ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Konfirmasi Kata Sandi Baru <span class="text-rose-500">*</span></label>
+                            <div class="relative">
+                                <input :type="showConfirm ? 'text' : 'password'" name="konfirmasi_password" required minlength="6" placeholder="Ulangi kata sandi baru"
+                                    class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 pr-10 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:bg-white transition">
+                                <button type="button" @click="showConfirm = !showConfirm" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">
+                                    <i :class="showConfirm ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-500 flex items-start gap-2">
+                            <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                            <span>Gunakan minimal 6 karakter. Pastikan Anda mengingat kata sandi baru untuk login berikutnya.</span>
+                        </div>
+                    </div>
+
+                    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                        <button type="button" @click="showGantiSandiModal = false"
+                            class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-medium transition">
+                            Batal
+                        </button>
+                        <button type="submit"
+                            class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition shadow-sm flex items-center gap-1.5">
+                            <i class="fas fa-check text-[10px]"></i> Simpan Sandi Baru
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
