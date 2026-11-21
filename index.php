@@ -159,6 +159,12 @@ if ($segment0 === 'guru') {
     } elseif ($action === 'kuis' && $param1 === 'delete') {
         $ctrl->kuisDelete($param2);
         exit;
+    } elseif ($action === 'soal' && $param1 === 'create') {
+        $ctrl->soalCreate();
+        exit;
+    } elseif ($action === 'soal' && $param1 === 'edit') {
+        $ctrl->soalEdit($param2);
+        exit;
     } elseif ($action === 'soal' && $param1 === 'delete') {
         $ctrl->soalDelete($param2);
         exit;

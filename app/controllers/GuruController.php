@@ -837,7 +837,17 @@ class GuruController
     {
         $id   = (int)$id;
         $kuis = $this->_findKuis($id);
-        $modul = $this->_findModul($kuis['modul_id']);
+
+        // Ambil info modul secara aman tanpa melempar redirect jika modul tidak ditemukan
+        $modul = null;
+        if (!empty($kuis['modul_id'])) {
+            $stmtM = $this->db->prepare("SELECT id, judul FROM modul WHERE id = ?");
+            $stmtM->execute([(int)$kuis['modul_id']]);
+            $modul = $stmtM->fetch() ?: null;
+        }
+        if (!$modul) {
+            $modul = ['id' => 0, 'judul' => 'Umum / Topologi Jaringan'];
+        }
 
         // Ambil semua soal dalam kuis ini
         $soal = $this->db->prepare("SELECT * FROM soal WHERE kuis_id = ? ORDER BY urutan ASC");
@@ -856,11 +866,13 @@ class GuruController
         $hasilList = $hasil->fetchAll();
 
         render('guru/kuis_detail', [
-            'title'     => 'Detail Kuis: ' . $kuis['judul'],
-            'kuis'      => $kuis,
-            'modul'     => $modul,
-            'soal'      => $soalList,
-            'hasil'     => $hasilList,
+            'title'       => 'Detail Kuis: ' . $kuis['judul'],
+            'currentPage' => 'kuis',
+            'kuis'        => $kuis,
+            'modul'       => $modul,
+            'soal'        => $soalList,
+            'hasil'       => $hasilList,
+            'csrf_token'  => generateToken(),
         ]);
     }
 
@@ -897,11 +909,12 @@ class GuruController
         $soal->execute([$id]);
 
         render('guru/kuis_edit', [
-            'title'      => 'Edit Kuis: ' . $kuis['judul'],
-            'kuis'       => $kuis,
-            'modulList'  => $modulList,
-            'soal'       => $soal->fetchAll(),
-            'csrf_token' => generateToken(),
+            'title'       => 'Edit Kuis: ' . $kuis['judul'],
+            'currentPage' => 'kuis',
+            'kuis'        => $kuis,
+            'modulList'   => $modulList,
+            'soal'        => $soal->fetchAll(),
+            'csrf_token'  => generateToken(),
         ]);
     }
 
@@ -942,6 +955,113 @@ class GuruController
 
         setFlash('error', 'Butir soal tidak ditemukan.');
         redirect(base_url('guru/kuis'));
+    }
+
+    public function soalCreate()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirect(base_url('guru/kuis'));
+        }
+
+        if (!verifyToken($_POST['csrf_token'] ?? '')) {
+            setFlash('error', 'Token keamanan tidak valid.');
+            redirect($_SERVER['HTTP_REFERER'] ?? base_url('guru/kuis'));
+        }
+
+        $kuisId = (int)($_POST['kuis_id'] ?? 0);
+        $kuis = $this->_findKuis($kuisId);
+
+        $pertanyaan   = sanitize($_POST['pertanyaan'] ?? '');
+        $opsiA        = sanitize($_POST['opsi_a'] ?? '');
+        $opsiB        = sanitize($_POST['opsi_b'] ?? '');
+        $opsiC        = sanitize($_POST['opsi_c'] ?? '');
+        $opsiD        = sanitize($_POST['opsi_d'] ?? '');
+        $jawabanBenar = strtoupper(trim($_POST['jawaban_benar'] ?? 'A'));
+        $poin         = (int)($_POST['poin'] ?? 25);
+        if ($poin <= 0) $poin = 25;
+
+        if (empty($pertanyaan) || empty($opsiA) || empty($opsiB) || empty($opsiC) || empty($opsiD)) {
+            setFlash('error', 'Pertanyaan dan seluruh opsi jawaban A, B, C, D wajib diisi.');
+            redirect(base_url('guru/kuis/detail/' . $kuisId));
+        }
+
+        if (!in_array($jawabanBenar, ['A', 'B', 'C', 'D'])) {
+            $jawabanBenar = 'A';
+        }
+
+        $stmtMax = $this->db->prepare("SELECT COALESCE(MAX(urutan), 0) + 1 FROM soal WHERE kuis_id = ?");
+        $stmtMax->execute([$kuisId]);
+        $nextUrutan = (int)$stmtMax->fetchColumn();
+
+        $stmt = $this->db->prepare(
+            "INSERT INTO soal (kuis_id, modul_id, pertanyaan, opsi_a, opsi_b, opsi_c, opsi_d, jawaban_benar, poin, urutan, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
+        );
+        $stmt->execute([
+            $kuisId,
+            $kuis['modul_id'] ?? null,
+            $pertanyaan,
+            $opsiA,
+            $opsiB,
+            $opsiC,
+            $opsiD,
+            $jawabanBenar,
+            $poin,
+            $nextUrutan
+        ]);
+
+        setFlash('success', 'Butir soal baru berhasil ditambahkan.');
+        redirect(base_url('guru/kuis/detail/' . $kuisId));
+    }
+
+    public function soalEdit($id)
+    {
+        $id = (int)$id;
+        $stmt = $this->db->prepare("SELECT * FROM soal WHERE id = ?");
+        $stmt->execute([$id]);
+        $soal = $stmt->fetch();
+
+        if (!$soal) {
+            setFlash('error', 'Butir soal tidak ditemukan.');
+            redirect(base_url('guru/kuis'));
+        }
+
+        $kuisId = (int)$soal['kuis_id'];
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!verifyToken($_POST['csrf_token'] ?? '')) {
+                setFlash('error', 'Token keamanan tidak valid.');
+                redirect(base_url('guru/kuis/detail/' . $kuisId));
+            }
+
+            $pertanyaan   = sanitize($_POST['pertanyaan'] ?? '');
+            $opsiA        = sanitize($_POST['opsi_a'] ?? '');
+            $opsiB        = sanitize($_POST['opsi_b'] ?? '');
+            $opsiC        = sanitize($_POST['opsi_c'] ?? '');
+            $opsiD        = sanitize($_POST['opsi_d'] ?? '');
+            $jawabanBenar = strtoupper(trim($_POST['jawaban_benar'] ?? 'A'));
+            $poin         = (int)($_POST['poin'] ?? 25);
+            if ($poin <= 0) $poin = 25;
+
+            if (empty($pertanyaan) || empty($opsiA) || empty($opsiB) || empty($opsiC) || empty($opsiD)) {
+                setFlash('error', 'Pertanyaan dan seluruh opsi jawaban A, B, C, D wajib diisi.');
+                redirect(base_url('guru/kuis/detail/' . $kuisId));
+            }
+
+            if (!in_array($jawabanBenar, ['A', 'B', 'C', 'D'])) {
+                $jawabanBenar = 'A';
+            }
+
+            $stmtUpdate = $this->db->prepare(
+                "UPDATE soal SET pertanyaan = ?, opsi_a = ?, opsi_b = ?, opsi_c = ?, opsi_d = ?, jawaban_benar = ?, poin = ? WHERE id = ?"
+            );
+            $stmtUpdate->execute([$pertanyaan, $opsiA, $opsiB, $opsiC, $opsiD, $jawabanBenar, $poin, $id]);
+
+            setFlash('success', 'Butir soal berhasil diperbarui.');
+            redirect(base_url('guru/kuis/detail/' . $kuisId));
+        }
+
+        redirect(base_url('guru/kuis/detail/' . $kuisId));
     }
 
     // =========================================================

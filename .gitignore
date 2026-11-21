@@ -29,6 +29,10 @@ mobile_siswa/linux/flutter/ephemeral/
 mobile_siswa/macos/Flutter/ephemeral/
 mobile_siswa/**/.generated/
 
-# Uploads directory (Opsional: keep directory structure with .gitkeep)
+# Uploads & Sessions directory
+storage/sessions/*
+!storage/sessions/.gitkeep
+cookie_test.txt
+cookies.txt
 # public/uploads/*
 # !public/uploads/.gitkeep

@@ -8,21 +8,13 @@ function startSession(): void {
     if (session_status() === PHP_SESSION_NONE) {
         $timeout = defined('SESSION_TIMEOUT') ? SESSION_TIMEOUT : 7200;
 
-        // Pastikan direktori session writable
-        $savePath = session_save_path();
-        if (empty($savePath) || !is_writable($savePath)) {
-            $localSessionDir = dirname(__DIR__, 2) . '/storage/sessions';
-            if (!is_dir($localSessionDir)) {
-                @mkdir($localSessionDir, 0777, true);
-            }
-            if (is_writable($localSessionDir)) {
-                @session_save_path($localSessionDir);
-            } else {
-                $sysTmp = sys_get_temp_dir();
-                if (is_writable($sysTmp)) {
-                    @session_save_path($sysTmp);
-                }
-            }
+        // Prioritaskan direktori session lokal aplikasi agar stabil dan terhindar dari permission error
+        $localSessionDir = dirname(__DIR__, 2) . '/storage/sessions';
+        if (!is_dir($localSessionDir)) {
+            @mkdir($localSessionDir, 0777, true);
+        }
+        if (is_dir($localSessionDir)) {
+            @session_save_path($localSessionDir);
         }
 
         if (!headers_sent()) {
