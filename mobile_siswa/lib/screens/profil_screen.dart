@@ -214,9 +214,6 @@ $f.Dispose()
     return null;
   }
 
-    return null;
-  }
-
   Future<void> _updateAvatarPreset(String filename) async {
     final avatarPath = 'public/img/avatars/$filename';
 
