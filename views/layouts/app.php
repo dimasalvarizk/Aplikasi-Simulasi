@@ -46,6 +46,11 @@
         [x-cloak] { display: none !important; }
         .sidebar-transition { transition: width 0.25s ease; }
         .nav-link-active { background-color: #1e293b; color: #ffffff !important; }
+        /* Sembunyikan ikon mata bawaan browser (Edge/IE) agar tidak dobel dengan tombol custom */
+        input::-ms-reveal,
+        input::-ms-clear {
+            display: none !important;
+        }
         /* Hilangkan background overlay pada popup SweetAlert2 */
         .swal2-container.swal2-backdrop-show,
         .swal2-container.swal2-noanimation {

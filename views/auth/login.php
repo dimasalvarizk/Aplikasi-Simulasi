@@ -12,6 +12,11 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         [x-cloak] { display: none !important; }
+        /* Sembunyikan ikon mata bawaan browser (Edge/IE) agar tidak dobel dengan tombol custom */
+        input::-ms-reveal,
+        input::-ms-clear {
+            display: none !important;
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8 relative bg-slate-900" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.78) 0%, rgba(15, 23, 42, 0.92) 100%), url('<?= base_url('public/images/school_bg.jpg') ?>') center center / cover no-repeat fixed;">
