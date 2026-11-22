@@ -12,15 +12,7 @@ class ApiService {
   static Completer<String?>? _discoveryCompleter;
 
   static String _getDefaultBaseUrl() {
-    if (!kIsWeb) {
-      try {
-        if (defaultTargetPlatform == TargetPlatform.android) {
-          // Prioritas default untuk HP Android fisik: coba IP Wi-Fi laptop saat ini
-          return 'http://192.168.1.8/aplikasi-simulasi/api';
-        }
-      } catch (_) {}
-    }
-    return 'http://127.0.0.1/aplikasi-simulasi/api';
+    return 'https://smpn1karmon.ct.ws/api';
   }
 
   static final List<String> _knownAppPaths = [
@@ -32,17 +24,17 @@ class ApiService {
   ];
 
   /// Membersihkan dan menormalkan URL yang diketik/ditempel
-  /// Menghindari typo seperti 'http://lochttp://192.168.18.6...' atau '/192.168.18.6/...'
+  /// Mendukung domain online (HTTPS) maupun IP lokal/XAMPP
   static String sanitizeUrl(String raw) {
     var url = raw.trim();
-    if (url.isEmpty) return 'http://192.168.18.6/aplikasi-simulasi/api';
+    if (url.isEmpty) return 'https://smpn1karmon.ct.ws/api';
 
-    // Bersihkan leading slash jika tidak sengaja terketik seperti '/192.168.18.6...'
+    // Bersihkan leading slash jika tidak sengaja terketik
     while (url.startsWith('/')) {
       url = url.substring(1).trim();
     }
 
-    // Perbaiki jika pengguna tidak sengaja menempel di tengah 'localhost'
+    // Perbaiki jika pengguna tidak sengaja menempel di tengah teks lain
     if (url.contains('http://') || url.contains('https://')) {
       final lastIdx = url.lastIndexOf(RegExp(r'https?://'));
       if (lastIdx > 0) {
@@ -50,20 +42,24 @@ class ApiService {
       }
     }
 
-    // Bersihkan multiple http://
-    url = url.replaceAll(RegExp(r'^(https?://)+', caseSensitive: false), 'http://');
+    // Pertahankan https jika diberikan atau jika berupa domain hosting
+    final bool isHttps = url.toLowerCase().startsWith('https://') || (!url.toLowerCase().startsWith('http://') && url.contains('.'));
+    url = url.replaceAll(RegExp(r'^(https?://)+', caseSensitive: false), isHttps ? 'https://' : 'http://');
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      url = 'http://$url';
+      url = isHttps ? 'https://$url' : 'http://$url';
     }
 
     url = url.replaceAll(RegExp(r'/+$'), '');
 
     final uri = Uri.tryParse(url);
     if (uri != null) {
-      // Jika pengguna hanya mengetik IP atau host tanpa folder (misal: 192.168.18.6 atau localhost)
-      if (uri.path.isEmpty || uri.path == '/' || uri.path == '/api') {
+      final host = uri.host.toLowerCase();
+      // Hanya sisipkan /aplikasi-simulasi jika targetnya adalah IP lokal XAMPP atau localhost
+      final isLocal = host == 'localhost' || host == '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.');
+      if (isLocal && (uri.path.isEmpty || uri.path == '/' || uri.path == '/api')) {
+        final scheme = uri.scheme.isNotEmpty ? uri.scheme : 'http';
         final hostPart = uri.hasPort ? '${uri.host}:${uri.port}' : uri.host;
-        return 'http://$hostPart/aplikasi-simulasi/api';
+        return '$scheme://$hostPart/aplikasi-simulasi/api';
       }
     }
 
