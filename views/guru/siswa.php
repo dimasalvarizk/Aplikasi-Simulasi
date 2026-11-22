@@ -257,6 +257,10 @@
                             <option value="VII B">Kelas VII B</option>
                             <option value="VII C">Kelas VII C</option>
                             <option value="VII D">Kelas VII D</option>
+                            <option value="VII E">Kelas VII E</option>
+                            <option value="VII F">Kelas VII F</option>
+                            <option value="VII G">Kelas VII G</option>
+                            <option value="VII H">Kelas VII H</option>
                         </select>
                     </div>
                 </div>
@@ -347,6 +351,10 @@
                             <option value="VII B">Kelas VII B</option>
                             <option value="VII C">Kelas VII C</option>
                             <option value="VII D">Kelas VII D</option>
+                            <option value="VII E">Kelas VII E</option>
+                            <option value="VII F">Kelas VII F</option>
+                            <option value="VII G">Kelas VII G</option>
+                            <option value="VII H">Kelas VII H</option>
                         </select>
                     </div>
                 </div>

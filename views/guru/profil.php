@@ -151,26 +151,21 @@
                     </span>
                 </div>
 
-                <div class="space-y-2">
-                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                <div class="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+                    <?php
+                    $listSemuaKelas = ['VII A', 'VII B', 'VII C', 'VII D', 'VII E', 'VII F', 'VII G', 'VII H'];
+                    foreach ($listSemuaKelas as $kb):
+                    ?>
+                    <div class="p-2.5 bg-slate-50 hover:bg-slate-100/70 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs transition">
                         <div>
-                            <strong class="text-slate-900 block font-bold">Kelas VII A</strong>
-                            <span class="text-[11px] text-slate-500">Informatika Topologi</span>
+                            <strong class="text-slate-900 block font-bold">Kelas <?= $kb ?></strong>
+                            <span class="text-[10px] text-slate-500">Informatika Topologi</span>
                         </div>
-                        <a href="<?= base_url('guru/siswa?kelas=VII+A') ?>" class="text-[11px] font-semibold text-blue-700 hover:underline">
+                        <a href="<?= base_url('guru/siswa?kelas=' . urlencode($kb)) ?>" class="text-[11px] font-semibold text-blue-700 hover:underline">
                             Lihat Siswa →
                         </a>
                     </div>
-
-                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
-                        <div>
-                            <strong class="text-slate-900 block font-bold">Kelas VII B</strong>
-                            <span class="text-[11px] text-slate-500">Informatika Topologi</span>
-                        </div>
-                        <a href="<?= base_url('guru/siswa?kelas=VII+B') ?>" class="text-[11px] font-semibold text-blue-700 hover:underline">
-                            Lihat Siswa →
-                        </a>
-                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
 

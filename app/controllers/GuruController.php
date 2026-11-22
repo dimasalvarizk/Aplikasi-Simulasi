@@ -160,13 +160,13 @@ class GuruController
         $stmt->execute();
         $siswa = $stmt->fetchAll();
 
-        $kelasList = $this->db->query(
-            "SELECT DISTINCT kelas FROM users WHERE role = 'siswa' AND kelas IS NOT NULL ORDER BY kelas"
+        $defaultKelas = ['VII A', 'VII B', 'VII C', 'VII D', 'VII E', 'VII F', 'VII G', 'VII H'];
+        $dbKelas = $this->db->query(
+            "SELECT DISTINCT kelas FROM users WHERE role = 'siswa' AND kelas IS NOT NULL AND kelas != '' ORDER BY kelas"
         )->fetchAll(PDO::FETCH_COLUMN);
 
-        if (empty($kelasList)) {
-            $kelasList = ['VII A', 'VII B', 'VII C'];
-        }
+        $kelasList = array_values(array_unique(array_merge($defaultKelas, $dbKelas)));
+        sort($kelasList);
 
         render('guru/siswa', [
             'title'      => 'Data Siswa & Kemajuan - SMP Negeri 1 Karangmoncol',
@@ -1112,7 +1112,10 @@ class GuruController
         }
         unset($s);
 
-        $kelasList = $this->db->query("SELECT DISTINCT kelas FROM users WHERE role = 'siswa' AND kelas IS NOT NULL ORDER BY kelas")->fetchAll(PDO::FETCH_COLUMN);
+        $defaultKelas = ['VII A', 'VII B', 'VII C', 'VII D', 'VII E', 'VII F', 'VII G', 'VII H'];
+        $dbKelas = $this->db->query("SELECT DISTINCT kelas FROM users WHERE role = 'siswa' AND kelas IS NOT NULL AND kelas != '' ORDER BY kelas")->fetchAll(PDO::FETCH_COLUMN);
+        $kelasList = array_values(array_unique(array_merge($defaultKelas, $dbKelas)));
+        sort($kelasList);
 
         render('guru/laporan', [
             'title'        => 'Rekapitulasi Nilai & Laporan Kelas - SMP Negeri 1 Karangmoncol',
