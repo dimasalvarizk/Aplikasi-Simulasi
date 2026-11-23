@@ -1101,6 +1101,17 @@ class ApiController
     {
         if ($amount <= 0 || $userId <= 0) return;
 
+        // Cegah duplikasi perolehan XP untuk kasus keamanan / tantangan satu kali
+        if ($type === 'kasus_keamanan') {
+            try {
+                $checkLog = $this->db->prepare("SELECT COUNT(*) FROM xp_log WHERE user_id = ? AND sumber = 'kasus_keamanan' AND referensi_id = ?");
+                $checkLog->execute([$userId, $refId]);
+                if ((int)$checkLog->fetchColumn() > 0) {
+                    return; // XP untuk tantangan kasus ini sudah pernah diberikan
+                }
+            } catch (Throwable $e) {}
+        }
+
         $now = date('Y-m-d H:i:s');
         $keterangan = 'Menyelesaikan ' . ucfirst($type) . ' (+' . $amount . ' XP)';
         if ($type === 'kasus_keamanan') {
@@ -1879,20 +1890,37 @@ class ApiController
                 $pStmt->execute([$userId, $id]);
                 $prev = $pStmt->fetch(PDO::FETCH_ASSOC);
 
+                // Cek riwayat xp_log untuk memastikan XP kasus ini hanya diberikan sekali seumur hidup
+                $xpAlreadyAwarded = false;
+                try {
+                    $logCheck = $this->db->prepare("SELECT COUNT(*) FROM xp_log WHERE user_id = ? AND sumber = 'kasus_keamanan' AND referensi_id = ?");
+                    $logCheck->execute([$userId, $id]);
+                    $xpAlreadyAwarded = ((int)$logCheck->fetchColumn() > 0);
+                } catch (Throwable $e) {}
+
                 if ($prev) {
-                    $prevCorrect = (int)$prev['is_correct'] === 1;
-                    if (!$prevCorrect && $isCorrect) {
+                    $prevHasWon = ((int)$prev['is_correct'] === 1 || (int)$prev['xp_earned'] > 0 || $xpAlreadyAwarded);
+                    // XP HANYA diberikan jika belum pernah menyelesaikan kasus ini sebelumnya DAN jawaban saat ini benar
+                    if (!$prevHasWon && $isCorrect) {
                         $xpReward = (int)($kasus['xp_reward'] ?? 20);
+                    } else {
+                        $xpReward = 0; // Mengulang soal tidak dapat XP lagi!
                     }
+
+                    // Sekali pernah benar, status is_correct tetap 1 (tidak di-downgrade jadi 0 saat siswa mencoba-coba)
+                    $finalIsCorrect = ($prevHasWon || $isCorrect) ? 1 : 0;
+
                     $uStmt = $this->db->prepare(
                         "UPDATE siswa_kasus_progress 
                          SET jawaban_siswa = ?, is_correct = ?, xp_earned = xp_earned + ?, attempt_count = attempt_count + 1, completed_at = ?
                          WHERE id = ?"
                     );
-                    $uStmt->execute([$jawabanSiswa, $isCorrect ? 1 : 0, $xpReward, $now, (int)$prev['id']]);
+                    $uStmt->execute([$jawabanSiswa, $finalIsCorrect, $xpReward, $now, (int)$prev['id']]);
                 } else {
-                    if ($isCorrect) {
+                    if ($isCorrect && !$xpAlreadyAwarded) {
                         $xpReward = (int)($kasus['xp_reward'] ?? 20);
+                    } else {
+                        $xpReward = 0;
                     }
                     $iStmt = $this->db->prepare(
                         "INSERT INTO siswa_kasus_progress (user_id, kasus_id, jawaban_siswa, is_correct, xp_earned, attempt_count, completed_at)
@@ -1901,7 +1929,7 @@ class ApiController
                     $iStmt->execute([$userId, $id, $jawabanSiswa, $isCorrect ? 1 : 0, $xpReward, $now]);
                 }
 
-                // Tambahkan XP jika dapat
+                // Tambahkan XP jika dapat (hanya pertama kali)
                 if ($xpReward > 0) {
                     $this->_addXP($userId, $xpReward, 'kasus_keamanan', $id);
                 }
@@ -1961,7 +1989,10 @@ class ApiController
             }
 
             $feedback = $isCorrect
-                ? 'Analisis kamu TEPAT SEKALI! ' . ($kunciAman === 1 ? 'Pesan ini memang aman dan bersumber dari kanal resmi.' : 'Pesan ini memang berbahaya (phishing/malware)! Kamu telah mengamankan data dan perangkatmu.')
+                ? ($xpReward > 0
+                    ? 'Analisis kamu TEPAT SEKALI! ' . ($kunciAman === 1 ? 'Pesan ini memang aman dan bersumber dari kanal resmi.' : 'Pesan ini memang berbahaya (phishing/malware)! Kamu telah mengamankan data dan perangkatmu.')
+                    : 'Analisis kamu TEPAT! (Mode latihan ulang: XP kasus ini sudah pernah diraih sebelumnya). ' . ($kunciAman === 1 ? 'Pesan ini aman dan bersumber dari kanal resmi.' : 'Pesan ini memang berbahaya (phishing/malware).')
+                  )
                 : 'Kurang tepat! ' . ($kunciAman === 1 ? 'Pesan ini sebenarnya aman karena berasal dari domain dan kontak resmi.' : 'Waspada! Pesan ini sebenarnya berbahaya (phishing/malware). Jangan sembarangan membuka link atau menginstal file yang mencurigakan.');
 
             jsonSuccess([

@@ -880,6 +880,10 @@ class SiswaController
         $keterangan = 'Menyelesaikan ' . ucfirst($type) . ' (+' . $amount . ' XP)';
         if ($type === 'kasus_keamanan') {
             try {
+                $already = (int)$this->db->query("SELECT COUNT(*) FROM xp_log WHERE user_id = {$userId} AND sumber = 'kasus_keamanan' AND referensi_id = {$refId}")->fetchColumn();
+                if ($already > 0) {
+                    return; // XP untuk tantangan kasus ini sudah pernah diberikan
+                }
                 $kasusJudul = $this->db->query("SELECT judul FROM kasus_keamanan WHERE id = {$refId}")->fetchColumn();
                 $keterangan = $kasusJudul ? 'Detektif Siber: ' . $kasusJudul . ' (+' . $amount . ' XP)' : 'Tantangan Detektif Siber (+' . $amount . ' XP)';
             } catch (Throwable $e) {}
@@ -1591,20 +1595,37 @@ class SiswaController
             $pStmt->execute([$userId, $id]);
             $prev = $pStmt->fetch(PDO::FETCH_ASSOC);
 
+            // Cek riwayat xp_log untuk memastikan XP kasus ini hanya diberikan sekali seumur hidup
+            $xpAlreadyAwarded = false;
+            try {
+                $logCheck = $this->db->prepare("SELECT COUNT(*) FROM xp_log WHERE user_id = ? AND sumber = 'kasus_keamanan' AND referensi_id = ?");
+                $logCheck->execute([$userId, $id]);
+                $xpAlreadyAwarded = ((int)$logCheck->fetchColumn() > 0);
+            } catch (Throwable $e) {}
+
             if ($prev) {
-                $prevCorrect = ((int)$prev['is_correct'] === 1);
-                if (!$prevCorrect && $isCorrect) {
+                $prevHasWon = ((int)$prev['is_correct'] === 1 || (int)$prev['xp_earned'] > 0 || $xpAlreadyAwarded);
+                // XP HANYA diberikan jika belum pernah menyelesaikan kasus ini sebelumnya DAN jawaban saat ini benar
+                if (!$prevHasWon && $isCorrect) {
                     $xpReward = (int)($kasus['xp_reward'] ?? 20);
+                } else {
+                    $xpReward = 0; // Mengulang soal tidak dapat XP lagi!
                 }
+
+                // Sekali pernah benar, status is_correct tetap 1 (tidak di-downgrade jadi 0 saat siswa mencoba-coba)
+                $finalIsCorrect = ($prevHasWon || $isCorrect) ? 1 : 0;
+
                 $uStmt = $this->db->prepare(
                     "UPDATE siswa_kasus_progress 
                      SET jawaban_siswa = ?, is_correct = ?, xp_earned = xp_earned + ?, attempt_count = attempt_count + 1, completed_at = ?
                      WHERE id = ?"
                 );
-                $uStmt->execute([$jawabanSiswa, $isCorrect ? 1 : 0, $xpReward, $now, (int)$prev['id']]);
+                $uStmt->execute([$jawabanSiswa, $finalIsCorrect, $xpReward, $now, (int)$prev['id']]);
             } else {
-                if ($isCorrect) {
+                if ($isCorrect && !$xpAlreadyAwarded) {
                     $xpReward = (int)($kasus['xp_reward'] ?? 20);
+                } else {
+                    $xpReward = 0;
                 }
                 $iStmt = $this->db->prepare(
                     "INSERT INTO siswa_kasus_progress (user_id, kasus_id, jawaban_siswa, is_correct, xp_earned, attempt_count, completed_at)
@@ -1644,12 +1665,12 @@ class SiswaController
                     'xp_earned'     => $xpReward,
                     'ciri_bahaya'   => $kasus['ciri_bahaya'],
                     'penjelasan'    => $kasus['penjelasan'],
-                ], $isCorrect ? 'Analisis Tepat! Anda mendapatkan reward XP.' : 'Analisis Kurang Tepat. Pelajari penjelasan edukasinya.');
+                ], $isCorrect ? ($xpReward > 0 ? 'Analisis Tepat! Anda mendapatkan reward XP.' : 'Analisis Tepat! (Kasus ini sudah pernah diselesaikan sebelumnya).') : 'Analisis Kurang Tepat. Pelajari penjelasan edukasinya.');
                 exit;
             }
 
             if ($isCorrect) {
-                setFlash('success', 'Analisis TEPAT SEKALI! ' . ($xpReward > 0 ? "Kamu meraih +{$xpReward} XP!" : "Kamu telah berhasil menganalisis kasus ini."));
+                setFlash('success', 'Analisis TEPAT SEKALI! ' . ($xpReward > 0 ? "Kamu meraih +{$xpReward} XP!" : "Kamu telah berhasil menganalisis kasus ini sebelumnya. (Mode latihan ulang)"));
             } else {
                 setFlash('error', 'Analisis kurang tepat. Waspadai tanda-tanda ancaman pada pesan tersebut!');
             }

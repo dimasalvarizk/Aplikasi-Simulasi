@@ -222,6 +222,31 @@ class _StudiKasusScreenState extends State<StudiKasusScreen> {
                     ),
                   ],
                 ),
+              )
+            else if (isCorrect)
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.check_circle_outline_rounded, color: Colors.blue.shade700, size: 18),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Latihan Ulang (XP sudah pernah diraih)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue.shade900,
+                      ),
+                    ),
+                  ],
+                ),
               ),
 
             // Badge Unlocked

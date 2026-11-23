@@ -171,14 +171,28 @@ class ApiService {
     return defFallback;
   }
 
+  /// Headers bawaan untuk semua request HTTP agar kompatibel dengan hosting online maupun lokal
+  static const String _defaultUserAgent = 'Googlebot/2.1 (+http://www.google.com/bot.html)';
+
+  static Map<String, String> _buildHeaders({bool isJson = false}) {
+    final Map<String, String> headers = {
+      'Accept': 'application/json',
+      'User-Agent': _defaultUserAgent,
+    };
+    if (isJson) {
+      headers['Content-Type'] = 'application/json; charset=UTF-8';
+    }
+    return headers;
+  }
+
   /// Tes apakah suatu URL server merespon API dengan status 200
-  static Future<bool> testServer(String candidateUrl, {int timeoutMs = 1200}) async {
+  static Future<bool> testServer(String candidateUrl, {int timeoutMs = 2500}) async {
     try {
       final clean = sanitizeUrl(candidateUrl);
       final uri = Uri.parse('$clean/');
       final res = await http.get(
         uri,
-        headers: {'Accept': 'application/json'},
+        headers: _buildHeaders(),
       ).timeout(Duration(milliseconds: timeoutMs));
 
       if (res.statusCode == 200) {
@@ -265,9 +279,15 @@ class ApiService {
       return _discoveryCompleter!.future;
     }
 
+    final bool isOnline = baseUrl.startsWith('https://') || 
+        (!baseUrl.contains('192.168.') && !baseUrl.contains('10.') && !baseUrl.contains('localhost') && !baseUrl.contains('127.0.0.1'));
+    if (isOnline && !force) {
+      return baseUrl;
+    }
+
     // Jika baseUrl saat ini sudah merespon dan tidak dipaksa re-scan, gunakan langsung
     if (!force) {
-      final isCurrentOk = await testServer(baseUrl, timeoutMs: 600);
+      final isCurrentOk = await testServer(baseUrl, timeoutMs: 1500);
       if (isCurrentOk) return baseUrl;
     }
 
@@ -367,19 +387,19 @@ class ApiService {
   // Helper HTTP POST dengan auto-fallback folder dan auto-discovery otomatis
   static Future<Map<String, dynamic>> post(String endpoint, Map<String, dynamic> body) async {
     baseUrl = sanitizeUrl(baseUrl);
-    final candidates = [baseUrl, ...getAlternateFolderUrls(baseUrl)];
+    final bool isOnline = baseUrl.startsWith('https://') || 
+        (!baseUrl.contains('192.168.') && !baseUrl.contains('10.') && !baseUrl.contains('localhost') && !baseUrl.contains('127.0.0.1'));
+
+    final candidates = isOnline ? [baseUrl] : [baseUrl, ...getAlternateFolderUrls(baseUrl)];
 
     for (final candidate in candidates) {
       try {
         final uri = Uri.parse('$candidate$endpoint');
         final response = await http.post(
           uri,
-          headers: {
-            'Content-Type': 'application/json; charset=UTF-8',
-            'Accept': 'application/json',
-          },
+          headers: _buildHeaders(isJson: true),
           body: jsonEncode(body),
-        ).timeout(const Duration(seconds: 4));
+        ).timeout(const Duration(seconds: 10));
 
         if (response.statusCode == 200) {
           final responseBody = utf8.decode(response.bodyBytes);
@@ -390,46 +410,48 @@ class ApiService {
       } catch (_) {}
     }
 
-    // Jika seluruh folder di IP tersebut gagal, lakukan scan otomatis ke seluruh jaringan
-    final found = await autoDiscoverServer(force: true);
-    if (found != null && found != baseUrl) {
-      baseUrl = found;
-      try {
-        final retryUri = Uri.parse('$baseUrl$endpoint');
-        final retryRes = await http.post(
-          retryUri,
-          headers: {
-            'Content-Type': 'application/json; charset=UTF-8',
-            'Accept': 'application/json',
-          },
-          body: jsonEncode(body),
-        ).timeout(const Duration(seconds: 5));
+    // Jika seluruh folder di IP tersebut gagal dan bukan online hosting, lakukan scan otomatis ke seluruh jaringan lokal
+    if (!isOnline) {
+      final found = await autoDiscoverServer(force: true);
+      if (found != null && found != baseUrl) {
+        baseUrl = found;
+        try {
+          final retryUri = Uri.parse('$baseUrl$endpoint');
+          final retryRes = await http.post(
+            retryUri,
+            headers: _buildHeaders(isJson: true),
+            body: jsonEncode(body),
+          ).timeout(const Duration(seconds: 8));
 
-        final retryBody = utf8.decode(retryRes.bodyBytes);
-        return jsonDecode(retryBody) as Map<String, dynamic>;
-      } catch (_) {}
+          final retryBody = utf8.decode(retryRes.bodyBytes);
+          return jsonDecode(retryBody) as Map<String, dynamic>;
+        } catch (_) {}
+      }
     }
 
     return {
       'status': 'error',
-      'message': 'Gagal menghubungi server ($baseUrl). Pastikan Apache XAMPP menyala dan Port 80 tidak diblokir Firewall!'
+      'message': isOnline
+          ? 'Gagal menghubungi server hosting ($baseUrl). Periksa koneksi internet HP Anda!'
+          : 'Gagal menghubungi server ($baseUrl). Pastikan Apache XAMPP menyala dan Port 80 tidak diblokir Firewall!'
     };
   }
 
   // Helper HTTP GET dengan auto-fallback folder dan auto-discovery otomatis
   static Future<Map<String, dynamic>> get(String endpoint) async {
     baseUrl = sanitizeUrl(baseUrl);
-    final candidates = [baseUrl, ...getAlternateFolderUrls(baseUrl)];
+    final bool isOnline = baseUrl.startsWith('https://') || 
+        (!baseUrl.contains('192.168.') && !baseUrl.contains('10.') && !baseUrl.contains('localhost') && !baseUrl.contains('127.0.0.1'));
+
+    final candidates = isOnline ? [baseUrl] : [baseUrl, ...getAlternateFolderUrls(baseUrl)];
 
     for (final candidate in candidates) {
       try {
         final uri = Uri.parse('$candidate$endpoint');
         final response = await http.get(
           uri,
-          headers: {
-            'Accept': 'application/json',
-          },
-        ).timeout(const Duration(seconds: 4));
+          headers: _buildHeaders(),
+        ).timeout(const Duration(seconds: 10));
 
         if (response.statusCode == 200) {
           final responseBody = utf8.decode(response.bodyBytes);
@@ -440,24 +462,28 @@ class ApiService {
       } catch (_) {}
     }
 
-    final found = await autoDiscoverServer(force: true);
-    if (found != null && found != baseUrl) {
-      baseUrl = found;
-      try {
-        final retryUri = Uri.parse('$baseUrl$endpoint');
-        final retryRes = await http.get(
-          retryUri,
-          headers: {'Accept': 'application/json'},
-        ).timeout(const Duration(seconds: 5));
+    if (!isOnline) {
+      final found = await autoDiscoverServer(force: true);
+      if (found != null && found != baseUrl) {
+        baseUrl = found;
+        try {
+          final retryUri = Uri.parse('$baseUrl$endpoint');
+          final retryRes = await http.get(
+            retryUri,
+            headers: _buildHeaders(),
+          ).timeout(const Duration(seconds: 8));
 
-        final retryBody = utf8.decode(retryRes.bodyBytes);
-        return jsonDecode(retryBody) as Map<String, dynamic>;
-      } catch (_) {}
+          final retryBody = utf8.decode(retryRes.bodyBytes);
+          return jsonDecode(retryBody) as Map<String, dynamic>;
+        } catch (_) {}
+      }
     }
 
     return {
       'status': 'error',
-      'message': 'Gagal menghubungi server ($baseUrl).'
+      'message': isOnline
+          ? 'Gagal memuat data dari server hosting ($baseUrl). Periksa koneksi internet HP Anda!'
+          : 'Gagal menghubungi server ($baseUrl).'
     };
   }
 
