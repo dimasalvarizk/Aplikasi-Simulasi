@@ -17,6 +17,28 @@ if ($scriptDir !== '/' && $scriptDir !== '\\' && !empty($scriptDir)) {
 }
 $route = trim($route, '/');
 
+// ─── Normalisasi Subfolder Prefix ─────────────────────────────────────────────
+// Kompatibilitas jika hosting berada di root tapi aplikasi mobile/client mengakses
+// dengan prefix subfolder (misal /aplikasi-simulasi/api atau /Aplikasi-Simulasi-main1/api)
+$appPrefixes = [
+    'aplikasi-simulasi',
+    'Aplikasi-Simulasi',
+    'aplikasi-simulasi-main1',
+    'Aplikasi-Simulasi-main1',
+    'aplikasi-simulasi-main',
+    'Aplikasi-Simulasi-main',
+];
+foreach ($appPrefixes as $pfx) {
+    if (str_starts_with($route, $pfx . '/')) {
+        $route = substr($route, strlen($pfx) + 1);
+        break;
+    } elseif ($route === $pfx) {
+        $route = '';
+        break;
+    }
+}
+$route = trim($route, '/');
+
 // Static file fallback untuk folder public (misal foto avatar, logo, css, js)
 if (str_starts_with($route, 'public/')) {
     $filePath = __DIR__ . '/' . $route;
