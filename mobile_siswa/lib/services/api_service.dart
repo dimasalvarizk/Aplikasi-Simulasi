@@ -6,13 +6,35 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  // Otomatis memilih baseUrl default (di Android langsung mengarah ke IP laptop atau auto-scan)
-  static String baseUrl = _getDefaultBaseUrl();
+  /// URL Hosting Online Resmi
+  static const String onlineBaseUrl = 'https://smpn1karmon.ct.ws/api';
+
+  /// URL Server Aktif (Default: Hosting Online, otomatis fallback ke Localhost XAMPP)
+  static String baseUrl = onlineBaseUrl;
   static bool _isDiscovering = false;
   static Completer<String?>? _discoveryCompleter;
 
-  static String _getDefaultBaseUrl() {
-    return 'https://smpn1karmon.ct.ws/api';
+  /// Daftar prioritas server lokal (XAMPP / Localhost / USB / Emulator)
+  static final List<String> _localPriorityCandidates = [
+    'http://localhost/aplikasi-simulasi/api',
+    'http://127.0.0.1/aplikasi-simulasi/api',
+    'http://192.168.1.8/aplikasi-simulasi/api',
+    'http://10.0.2.2/aplikasi-simulasi/api', // Android Emulator
+    'http://localhost:8080/aplikasi-simulasi/api',
+    'http://127.0.0.1:8080/aplikasi-simulasi/api',
+    'http://192.168.43.1/aplikasi-simulasi/api',
+    'http://192.168.18.6/aplikasi-simulasi/api',
+    'http://10.34.197.13/aplikasi-simulasi/api',
+  ];
+
+  static bool isOnlineUrl(String url) {
+    final lower = url.toLowerCase();
+    return lower.startsWith('https://') ||
+        (lower.contains('.') &&
+         !lower.contains('192.168.') &&
+         !lower.contains('10.') &&
+         !lower.contains('127.0.0.1') &&
+         !lower.contains('localhost'));
   }
 
   static final List<String> _knownAppPaths = [
@@ -273,16 +295,10 @@ class ApiService {
     return candidates.map(sanitizeUrl).toList();
   }
 
-  /// Pindai dan temukan server API secara otomatis tanpa perlu setting manual (Fast Parallel Race)
+  /// Pindai dan temukan server API secara otomatis (Dual-Mode: Hosting Online & Localhost XAMPP)
   static Future<String?> autoDiscoverServer({bool force = false}) async {
     if (_isDiscovering && _discoveryCompleter != null) {
       return _discoveryCompleter!.future;
-    }
-
-    final bool isOnline = baseUrl.startsWith('https://') || 
-        (!baseUrl.contains('192.168.') && !baseUrl.contains('10.') && !baseUrl.contains('localhost') && !baseUrl.contains('127.0.0.1'));
-    if (isOnline && !force) {
-      return baseUrl;
     }
 
     // Jika baseUrl saat ini sudah merespon dan tidak dipaksa re-scan, gunakan langsung
@@ -295,87 +311,80 @@ class ApiService {
     _discoveryCompleter = Completer<String?>();
 
     try {
-      final allCandidates = await getSmartCandidateUrls();
+      // 1. Cek Server Online Hosting dan Server Lokal Prioritas secara paralel cepat
+      final List<String> fastCandidates = [
+        onlineBaseUrl,
+        ..._localPriorityCandidates.map(sanitizeUrl),
+      ];
 
-      // Cek prioritas pertama secara paralel super cepat (IP laptop teman/personal, hotspot, emulator)
-      final priority = [
-        'http://10.34.197.13/Aplikasi-Simulasi-main1/api',
-        'http://10.34.197.13/aplikasi-simulasi-main1/api',
-        'http://10.34.197.13/aplikasi-simulasi/api',
-        'http://192.168.18.6/Aplikasi-Simulasi-main1/api',
-        'http://192.168.18.6/aplikasi-simulasi-main1/api',
-        'http://192.168.18.6/aplikasi-simulasi/api',
-        'http://192.168.43.1/Aplikasi-Simulasi-main1/api',
-        'http://192.168.43.1/aplikasi-simulasi-main1/api',
-        'http://10.0.2.2/aplikasi-simulasi/api',
-        'http://localhost/Aplikasi-Simulasi-main1/api',
-      ].map(sanitizeUrl).toList();
+      final fastCompleter = Completer<String?>();
+      int pending = fastCandidates.length;
 
-      final priorityCompleter = Completer<String?>();
-      int pPending = priority.length;
-      for (final pUrl in priority) {
-        testServer(pUrl, timeoutMs: 800).then((ok) {
-          if (ok && !priorityCompleter.isCompleted) {
-            priorityCompleter.complete(pUrl);
+      for (final candidate in fastCandidates) {
+        testServer(candidate, timeoutMs: 1800).then((ok) {
+          if (ok && !fastCompleter.isCompleted) {
+            fastCompleter.complete(candidate);
           } else {
-            pPending--;
-            if (pPending <= 0 && !priorityCompleter.isCompleted) {
-              priorityCompleter.complete(null);
+            pending--;
+            if (pending <= 0 && !fastCompleter.isCompleted) {
+              fastCompleter.complete(null);
             }
           }
         }).catchError((_) {
-          pPending--;
-          if (pPending <= 0 && !priorityCompleter.isCompleted) {
-            priorityCompleter.complete(null);
+          pending--;
+          if (pending <= 0 && !fastCompleter.isCompleted) {
+            fastCompleter.complete(null);
           }
         });
       }
 
-      final pFound = await priorityCompleter.future.timeout(
-        const Duration(milliseconds: 900),
+      final fastFound = await fastCompleter.future.timeout(
+        const Duration(seconds: 2, milliseconds: 200),
         onTimeout: () => null,
       );
 
-      if (pFound != null) {
-        baseUrl = pFound;
+      if (fastFound != null) {
+        baseUrl = fastFound;
         _isDiscovering = false;
-        _discoveryCompleter?.complete(pFound);
-        return pFound;
+        _discoveryCompleter?.complete(fastFound);
+        return fastFound;
       }
 
-      // Jika belum ditemukan di prioritas, lakukan race paralel pada seluruh kandidat
-      final raceCompleter = Completer<String?>();
-      final remaining = allCandidates.where((u) => !priority.contains(u)).toList();
-      int rPending = remaining.length;
+      // 2. Jika fast candidates belum merespon, lakukan scan luas pada interface dan subnet Wi-Fi
+      final allCandidates = await getSmartCandidateUrls();
+      final remaining = allCandidates.where((u) => !fastCandidates.contains(u)).toList();
+
+      final broadCompleter = Completer<String?>();
+      int bPending = remaining.length;
 
       for (final rUrl in remaining) {
         testServer(rUrl, timeoutMs: 1200).then((ok) {
-          if (ok && !raceCompleter.isCompleted) {
-            raceCompleter.complete(rUrl);
+          if (ok && !broadCompleter.isCompleted) {
+            broadCompleter.complete(rUrl);
           } else {
-            rPending--;
-            if (rPending <= 0 && !raceCompleter.isCompleted) {
-              raceCompleter.complete(null);
+            bPending--;
+            if (bPending <= 0 && !broadCompleter.isCompleted) {
+              broadCompleter.complete(null);
             }
           }
         }).catchError((_) {
-          rPending--;
-          if (rPending <= 0 && !raceCompleter.isCompleted) {
-            raceCompleter.complete(null);
+          bPending--;
+          if (bPending <= 0 && !broadCompleter.isCompleted) {
+            broadCompleter.complete(null);
           }
         });
       }
 
-      final rFound = await raceCompleter.future.timeout(
+      final broadFound = await broadCompleter.future.timeout(
         const Duration(seconds: 2),
         onTimeout: () => null,
       );
 
-      if (rFound != null) {
-        baseUrl = rFound;
+      if (broadFound != null) {
+        baseUrl = broadFound;
         _isDiscovering = false;
-        _discoveryCompleter?.complete(rFound);
-        return rFound;
+        _discoveryCompleter?.complete(broadFound);
+        return broadFound;
       }
     } catch (_) {}
 
@@ -384,106 +393,154 @@ class ApiService {
     return null;
   }
 
-  // Helper HTTP POST dengan auto-fallback folder dan auto-discovery otomatis
+  // Helper HTTP POST dengan auto-fallback dan dual-mode otomatis (Hosting Online <-> Localhost XAMPP)
   static Future<Map<String, dynamic>> post(String endpoint, Map<String, dynamic> body) async {
     baseUrl = sanitizeUrl(baseUrl);
-    final bool isOnline = baseUrl.startsWith('https://') || 
-        (!baseUrl.contains('192.168.') && !baseUrl.contains('10.') && !baseUrl.contains('localhost') && !baseUrl.contains('127.0.0.1'));
+    final String currentBase = baseUrl;
+    final bool currentIsOnline = isOnlineUrl(currentBase);
 
-    final candidates = isOnline ? [baseUrl] : [baseUrl, ...getAlternateFolderUrls(baseUrl)];
+    // 1. Coba server utama yang sedang aktif terlebih dahulu
+    try {
+      final uri = Uri.parse('$currentBase$endpoint');
+      final response = await http.post(
+        uri,
+        headers: _buildHeaders(isJson: true),
+        body: jsonEncode(body),
+      ).timeout(const Duration(seconds: 7));
 
-    for (final candidate in candidates) {
+      if (response.statusCode == 200) {
+        final responseBody = utf8.decode(response.bodyBytes);
+        final decoded = jsonDecode(responseBody) as Map<String, dynamic>;
+        baseUrl = currentBase; // Server aktif terverifikasi!
+        return decoded;
+      }
+    } catch (_) {}
+
+    // 2. Jika server utama gagal, otomatis beralih ke server alternatif (Dual-Mode: Online <-> Localhost)
+    final List<String> fallbackServers = [];
+    if (currentIsOnline) {
+      // Jika hosting online gagal/offline, otomatis coba server localhost laptop
+      fallbackServers.addAll(_localPriorityCandidates);
+    } else {
+      // Jika localhost laptop mati/tidak dijangkau, otomatis coba server hosting online
+      fallbackServers.add(onlineBaseUrl);
+      fallbackServers.addAll(getAlternateFolderUrls(currentBase));
+    }
+
+    for (final fallback in fallbackServers) {
+      final cleanFallback = sanitizeUrl(fallback);
+      if (cleanFallback == currentBase) continue;
+
       try {
-        final uri = Uri.parse('$candidate$endpoint');
+        final uri = Uri.parse('$cleanFallback$endpoint');
         final response = await http.post(
           uri,
           headers: _buildHeaders(isJson: true),
           body: jsonEncode(body),
-        ).timeout(const Duration(seconds: 10));
+        ).timeout(const Duration(seconds: 4));
 
         if (response.statusCode == 200) {
           final responseBody = utf8.decode(response.bodyBytes);
           final decoded = jsonDecode(responseBody) as Map<String, dynamic>;
-          baseUrl = candidate; // Server aktif terverifikasi!
+          baseUrl = cleanFallback; // Sukses beralih server otomatis!
           return decoded;
         }
       } catch (_) {}
     }
 
-    // Jika seluruh folder di IP tersebut gagal dan bukan online hosting, lakukan scan otomatis ke seluruh jaringan lokal
-    if (!isOnline) {
-      final found = await autoDiscoverServer(force: true);
-      if (found != null && found != baseUrl) {
-        baseUrl = found;
-        try {
-          final retryUri = Uri.parse('$baseUrl$endpoint');
-          final retryRes = await http.post(
-            retryUri,
-            headers: _buildHeaders(isJson: true),
-            body: jsonEncode(body),
-          ).timeout(const Duration(seconds: 8));
+    // 3. Jika fallback cepat belum berhasil, jalankan auto-discovery penuh
+    final found = await autoDiscoverServer(force: true);
+    if (found != null && found != currentBase) {
+      baseUrl = found;
+      try {
+        final retryUri = Uri.parse('$baseUrl$endpoint');
+        final retryRes = await http.post(
+          retryUri,
+          headers: _buildHeaders(isJson: true),
+          body: jsonEncode(body),
+        ).timeout(const Duration(seconds: 6));
 
-          final retryBody = utf8.decode(retryRes.bodyBytes);
-          return jsonDecode(retryBody) as Map<String, dynamic>;
-        } catch (_) {}
-      }
+        final retryBody = utf8.decode(retryRes.bodyBytes);
+        return jsonDecode(retryBody) as Map<String, dynamic>;
+      } catch (_) {}
     }
 
     return {
       'status': 'error',
-      'message': isOnline
-          ? 'Gagal menghubungi server hosting ($baseUrl). Periksa koneksi internet HP Anda!'
-          : 'Gagal menghubungi server ($baseUrl). Pastikan Apache XAMPP menyala dan Port 80 tidak diblokir Firewall!'
+      'message': 'Gagal menghubungi server (Hosting maupun Localhost). Periksa koneksi internet atau pastikan XAMPP laptop menyala!'
     };
   }
 
-  // Helper HTTP GET dengan auto-fallback folder dan auto-discovery otomatis
+  // Helper HTTP GET dengan auto-fallback dan dual-mode otomatis (Hosting Online <-> Localhost XAMPP)
   static Future<Map<String, dynamic>> get(String endpoint) async {
     baseUrl = sanitizeUrl(baseUrl);
-    final bool isOnline = baseUrl.startsWith('https://') || 
-        (!baseUrl.contains('192.168.') && !baseUrl.contains('10.') && !baseUrl.contains('localhost') && !baseUrl.contains('127.0.0.1'));
+    final String currentBase = baseUrl;
+    final bool currentIsOnline = isOnlineUrl(currentBase);
 
-    final candidates = isOnline ? [baseUrl] : [baseUrl, ...getAlternateFolderUrls(baseUrl)];
+    // 1. Coba server utama yang sedang aktif terlebih dahulu
+    try {
+      final uri = Uri.parse('$currentBase$endpoint');
+      final response = await http.get(
+        uri,
+        headers: _buildHeaders(),
+      ).timeout(const Duration(seconds: 7));
 
-    for (final candidate in candidates) {
+      if (response.statusCode == 200) {
+        final responseBody = utf8.decode(response.bodyBytes);
+        final decoded = jsonDecode(responseBody) as Map<String, dynamic>;
+        baseUrl = currentBase;
+        return decoded;
+      }
+    } catch (_) {}
+
+    // 2. Jika server utama gagal, otomatis beralih ke server alternatif (Dual-Mode: Online <-> Localhost)
+    final List<String> fallbackServers = [];
+    if (currentIsOnline) {
+      fallbackServers.addAll(_localPriorityCandidates);
+    } else {
+      fallbackServers.add(onlineBaseUrl);
+      fallbackServers.addAll(getAlternateFolderUrls(currentBase));
+    }
+
+    for (final fallback in fallbackServers) {
+      final cleanFallback = sanitizeUrl(fallback);
+      if (cleanFallback == currentBase) continue;
+
       try {
-        final uri = Uri.parse('$candidate$endpoint');
+        final uri = Uri.parse('$cleanFallback$endpoint');
         final response = await http.get(
           uri,
           headers: _buildHeaders(),
-        ).timeout(const Duration(seconds: 10));
+        ).timeout(const Duration(seconds: 4));
 
         if (response.statusCode == 200) {
           final responseBody = utf8.decode(response.bodyBytes);
           final decoded = jsonDecode(responseBody) as Map<String, dynamic>;
-          baseUrl = candidate;
+          baseUrl = cleanFallback;
           return decoded;
         }
       } catch (_) {}
     }
 
-    if (!isOnline) {
-      final found = await autoDiscoverServer(force: true);
-      if (found != null && found != baseUrl) {
-        baseUrl = found;
-        try {
-          final retryUri = Uri.parse('$baseUrl$endpoint');
-          final retryRes = await http.get(
-            retryUri,
-            headers: _buildHeaders(),
-          ).timeout(const Duration(seconds: 8));
+    // 3. Jika fallback cepat belum berhasil, jalankan auto-discovery penuh
+    final found = await autoDiscoverServer(force: true);
+    if (found != null && found != currentBase) {
+      baseUrl = found;
+      try {
+        final retryUri = Uri.parse('$baseUrl$endpoint');
+        final retryRes = await http.get(
+          retryUri,
+          headers: _buildHeaders(),
+        ).timeout(const Duration(seconds: 6));
 
-          final retryBody = utf8.decode(retryRes.bodyBytes);
-          return jsonDecode(retryBody) as Map<String, dynamic>;
-        } catch (_) {}
-      }
+        final retryBody = utf8.decode(retryRes.bodyBytes);
+        return jsonDecode(retryBody) as Map<String, dynamic>;
+      } catch (_) {}
     }
 
     return {
       'status': 'error',
-      'message': isOnline
-          ? 'Gagal memuat data dari server hosting ($baseUrl). Periksa koneksi internet HP Anda!'
-          : 'Gagal menghubungi server ($baseUrl).'
+      'message': 'Gagal memuat data dari server (Hosting maupun Localhost).'
     };
   }
 
